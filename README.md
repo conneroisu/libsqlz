@@ -1,0 +1,2 @@
+# libsqlz
+libsql zig
