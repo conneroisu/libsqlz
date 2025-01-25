@@ -1,0 +1,10 @@
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-unknown-linux-musl/release/deps/libuntrusted-bf57de6b7c8ca96f.rmeta: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/untrusted-0.9.0/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/untrusted-0.9.0/src/input.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/untrusted-0.9.0/src/no_panic.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/untrusted-0.9.0/src/reader.rs
+
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-unknown-linux-musl/release/deps/libuntrusted-bf57de6b7c8ca96f.rlib: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/untrusted-0.9.0/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/untrusted-0.9.0/src/input.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/untrusted-0.9.0/src/no_panic.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/untrusted-0.9.0/src/reader.rs
+
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-unknown-linux-musl/release/deps/untrusted-bf57de6b7c8ca96f.d: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/untrusted-0.9.0/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/untrusted-0.9.0/src/input.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/untrusted-0.9.0/src/no_panic.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/untrusted-0.9.0/src/reader.rs
+
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/untrusted-0.9.0/src/lib.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/untrusted-0.9.0/src/input.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/untrusted-0.9.0/src/no_panic.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/untrusted-0.9.0/src/reader.rs:

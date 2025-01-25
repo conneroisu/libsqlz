@@ -1,0 +1,10 @@
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-unknown-linux-gnu/release/deps/libppv_lite86-2918c8ca16405623.rmeta: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ppv-lite86-0.2.20/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ppv-lite86-0.2.20/src/soft.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ppv-lite86-0.2.20/src/types.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ppv-lite86-0.2.20/src/generic.rs
+
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-unknown-linux-gnu/release/deps/libppv_lite86-2918c8ca16405623.rlib: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ppv-lite86-0.2.20/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ppv-lite86-0.2.20/src/soft.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ppv-lite86-0.2.20/src/types.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ppv-lite86-0.2.20/src/generic.rs
+
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-unknown-linux-gnu/release/deps/ppv_lite86-2918c8ca16405623.d: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ppv-lite86-0.2.20/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ppv-lite86-0.2.20/src/soft.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ppv-lite86-0.2.20/src/types.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ppv-lite86-0.2.20/src/generic.rs
+
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ppv-lite86-0.2.20/src/lib.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ppv-lite86-0.2.20/src/soft.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ppv-lite86-0.2.20/src/types.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ppv-lite86-0.2.20/src/generic.rs:

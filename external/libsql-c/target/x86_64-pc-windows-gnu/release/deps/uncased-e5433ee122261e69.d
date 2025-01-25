@@ -1,0 +1,10 @@
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-pc-windows-gnu/release/deps/libuncased-e5433ee122261e69.rmeta: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/uncased-0.9.10/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/uncased-0.9.10/src/owned.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/uncased-0.9.10/src/borrowed.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/uncased-0.9.10/src/as_uncased.rs
+
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-pc-windows-gnu/release/deps/libuncased-e5433ee122261e69.rlib: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/uncased-0.9.10/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/uncased-0.9.10/src/owned.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/uncased-0.9.10/src/borrowed.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/uncased-0.9.10/src/as_uncased.rs
+
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-pc-windows-gnu/release/deps/uncased-e5433ee122261e69.d: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/uncased-0.9.10/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/uncased-0.9.10/src/owned.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/uncased-0.9.10/src/borrowed.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/uncased-0.9.10/src/as_uncased.rs
+
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/uncased-0.9.10/src/lib.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/uncased-0.9.10/src/owned.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/uncased-0.9.10/src/borrowed.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/uncased-0.9.10/src/as_uncased.rs:

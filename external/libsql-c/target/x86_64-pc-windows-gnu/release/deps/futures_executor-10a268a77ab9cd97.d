@@ -1,0 +1,9 @@
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-pc-windows-gnu/release/deps/libfutures_executor-10a268a77ab9cd97.rmeta: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/local_pool.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/enter.rs
+
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-pc-windows-gnu/release/deps/libfutures_executor-10a268a77ab9cd97.rlib: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/local_pool.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/enter.rs
+
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-pc-windows-gnu/release/deps/futures_executor-10a268a77ab9cd97.d: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/local_pool.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/enter.rs
+
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/lib.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/local_pool.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/enter.rs:

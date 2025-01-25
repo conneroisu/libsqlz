@@ -1,0 +1,10 @@
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-apple-darwin/release/deps/liblog-a1f5525706381e80.rmeta: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/macros.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/serde.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/__private_api.rs
+
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-apple-darwin/release/deps/liblog-a1f5525706381e80.rlib: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/macros.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/serde.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/__private_api.rs
+
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-apple-darwin/release/deps/log-a1f5525706381e80.d: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/macros.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/serde.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/__private_api.rs
+
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/lib.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/macros.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/serde.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/__private_api.rs:

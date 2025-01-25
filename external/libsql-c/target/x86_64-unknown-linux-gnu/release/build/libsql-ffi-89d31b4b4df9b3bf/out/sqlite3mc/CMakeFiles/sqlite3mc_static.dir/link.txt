@@ -1,0 +1,2 @@
+/nix/store/nssfh4x7iyblhqhqpff8bs5p5qc6xryj-x86_64-unknown-linux-gnu-gcc-wrapper-13.3.0/bin/x86_64-unknown-linux-gnu-ar qc libsqlite3mc_static.a CMakeFiles/sqlite3mc_static.dir/src/sqlite3mc.c.o
+/nix/store/nssfh4x7iyblhqhqpff8bs5p5qc6xryj-x86_64-unknown-linux-gnu-gcc-wrapper-13.3.0/bin/x86_64-unknown-linux-gnu-ranlib libsqlite3mc_static.a

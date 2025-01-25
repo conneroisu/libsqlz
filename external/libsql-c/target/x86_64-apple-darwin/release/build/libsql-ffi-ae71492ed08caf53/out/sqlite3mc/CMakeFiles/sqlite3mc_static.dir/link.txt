@@ -1,0 +1,2 @@
+/nix/store/vkrsdxrnwdv6f88y3kmafynyymyl5lhj-x86_64-apple-darwin-clang-wrapper-16.0.6/bin/x86_64-apple-darwin-ar qc libsqlite3mc_static.a CMakeFiles/sqlite3mc_static.dir/src/sqlite3mc.c.o
+/run/current-system/sw/bin/llvm-ranlib libsqlite3mc_static.a

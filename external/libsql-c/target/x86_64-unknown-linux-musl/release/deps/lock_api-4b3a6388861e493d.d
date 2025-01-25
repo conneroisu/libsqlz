@@ -1,0 +1,10 @@
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-unknown-linux-musl/release/deps/liblock_api-4b3a6388861e493d.rmeta: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/lock_api-0.4.12/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/lock_api-0.4.12/src/mutex.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/lock_api-0.4.12/src/remutex.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/lock_api-0.4.12/src/rwlock.rs
+
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-unknown-linux-musl/release/deps/liblock_api-4b3a6388861e493d.rlib: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/lock_api-0.4.12/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/lock_api-0.4.12/src/mutex.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/lock_api-0.4.12/src/remutex.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/lock_api-0.4.12/src/rwlock.rs
+
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-unknown-linux-musl/release/deps/lock_api-4b3a6388861e493d.d: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/lock_api-0.4.12/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/lock_api-0.4.12/src/mutex.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/lock_api-0.4.12/src/remutex.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/lock_api-0.4.12/src/rwlock.rs
+
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/lock_api-0.4.12/src/lib.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/lock_api-0.4.12/src/mutex.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/lock_api-0.4.12/src/remutex.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/lock_api-0.4.12/src/rwlock.rs:

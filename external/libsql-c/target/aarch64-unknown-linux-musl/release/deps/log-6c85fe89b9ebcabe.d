@@ -1,0 +1,10 @@
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-unknown-linux-musl/release/deps/liblog-6c85fe89b9ebcabe.rmeta: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/macros.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/serde.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/__private_api.rs
+
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-unknown-linux-musl/release/deps/liblog-6c85fe89b9ebcabe.rlib: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/macros.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/serde.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/__private_api.rs
+
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-unknown-linux-musl/release/deps/log-6c85fe89b9ebcabe.d: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/macros.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/serde.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/__private_api.rs
+
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/lib.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/macros.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/serde.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/log-0.4.24/src/__private_api.rs:

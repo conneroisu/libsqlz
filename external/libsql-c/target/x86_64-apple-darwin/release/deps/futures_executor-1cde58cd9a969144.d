@@ -1,0 +1,9 @@
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-apple-darwin/release/deps/libfutures_executor-1cde58cd9a969144.rmeta: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/local_pool.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/enter.rs
+
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-apple-darwin/release/deps/libfutures_executor-1cde58cd9a969144.rlib: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/local_pool.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/enter.rs
+
+/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-apple-darwin/release/deps/futures_executor-1cde58cd9a969144.d: /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/lib.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/local_pool.rs /Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/enter.rs
+
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/lib.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/local_pool.rs:
+/Users/connerohnesorge/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-executor-0.3.31/src/enter.rs:
