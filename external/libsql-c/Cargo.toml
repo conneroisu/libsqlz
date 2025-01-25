@@ -1,0 +1,24 @@
+[package]
+name = "libsql-c"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "libsql"
+crate-type = ["dylib", "staticlib"]
+
+[features]
+encryption = ["libsql/encryption"]
+
+[dependencies]
+lazy_static = "1.5.0"
+tokio = { version = "1.29.1", features = [ "rt-multi-thread" ] }
+libsql = { git = "https://github.com/levydsa/libsql.git", branch = "fix_cross_mac" }
+hyper-rustls = { version = "0.25", features = ["webpki-roots"]}
+anyhow = "1.0.86"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
+tracing = "0.1.40"
+libsql-c-macros = { path = "macros" }
+
+[build-dependencies]
+bindgen = "0.69.5"
