@@ -1,0 +1,3 @@
+[submodule "vendor/libsql-c"]
+	path = vendor/libsql-c
+	url = https://github.com/tursodatabase/libsql-c.git
