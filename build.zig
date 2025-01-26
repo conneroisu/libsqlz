@@ -6,7 +6,9 @@ pub fn build(b: *std.Build) void {
     //
     const target = b.standardTargetOptions(.{});
 
-    const lib_dir = b.pathJoin(&.{ path_libsql, "target", get_target_triple(target), "release" });
+    const lib_dir = b.pathJoin(
+        &.{ path_libsql, get_target_triple(target), "release" },
+    );
 
     if (target.result.os.tag == .windows) {
         std.log.err("Windows is not supported yet. https://github.com/conneroisu/libsqlz/issues", .{});

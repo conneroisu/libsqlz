@@ -107,9 +107,10 @@ test "remote without auth" {
 }
 
 test "local init" {
-    var db = try Database.init(
+    const db = try Database.init(
         "file://inmemory",
         ":memory:",
         null,
     );
+    std.log.info(".{any}", db);
 }
