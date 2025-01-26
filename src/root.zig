@@ -181,6 +181,7 @@ pub const Database = struct {
         }
     }
 
+    // TODO: Pass in a table struct to get the results.
     pub fn _select(self: Self, query: []const u8) !void {
         //
         const stmt = c.libsql_connection_prepare(self.conn, query.ptr);
@@ -259,7 +260,12 @@ test "local init" {
     defer db.deinit() catch |err| {
         std.debug.print("deinit error: {any}\n", .{err});
     };
-    try db._query("CREATE TABLE IF NOT EXISTS test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)");
+    try db._query(
+        \\ CREATE TABLE IF NOT EXISTS test (
+        \\      id INTEGER PRIMARY KEY AUTOINCREMENT,
+        \\      name TEXT
+        \\ );
+    );
     try db._query("INSERT INTO test (name) VALUES ('test')");
     try db._query("INSERT INTO test (name) VALUES ('test')");
     try db._select("SELECT * FROM test");
