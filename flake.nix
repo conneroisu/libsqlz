@@ -168,6 +168,11 @@
                   sh build.sh
                   # TODO: copy build outputs
                 '';
+
+                tests.exec = ''
+                  rm -rf ./.zig-cache/
+                  zig build test
+                '';
               };
 
               cachix.enable = true;
