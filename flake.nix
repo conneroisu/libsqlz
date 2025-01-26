@@ -93,10 +93,6 @@
                   gnum4
 
                   watchexec
-                  meson
-                  gnumake
-                  cmake
-                  gcc
                   stdenv.cc
 
                   tbb # Intel Threading Building Blocks
