@@ -1,4 +1,5 @@
 const std = @import("std");
+const libsqlz = @import("vendor/build.zig");
 
 pub fn build(b: *std.Build) void {
     //
@@ -17,6 +18,11 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+
+    libsqlz.build_libsql_c(b, target, optimize) catch |err| {
+        std.debug.print("Failed to build libsql-c: {}\n", .{err});
+        return;
+    };
 
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when

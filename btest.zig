@@ -1,10 +1,5 @@
 const std = @import("std");
 
-pub fn getBuildTarget(b: *std.Build) []const u8 {
-    const target = b.standardTargetOptions(.{}).result;
-    return target.zigTriple(b.allocator) catch unreachable;
-}
-
 pub const TargetError = error{
     UnsupportedTarget,
     OutOfMemory,
