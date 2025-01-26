@@ -11,14 +11,6 @@ const URLSchemas = enum {
 };
 
 fn logger(log_t: c.libsql_log_t) callconv(.C) void {
-    // pub const libsql_log_t = extern struct {
-    //     message: [*c]const u8 = @import("std").mem.zeroes([*c]const u8),
-    //     target: [*c]const u8 = @import("std").mem.zeroes([*c]const u8),
-    //     file: [*c]const u8 = @import("std").mem.zeroes([*c]const u8),
-    //     timestamp: u64 = @import("std").mem.zeroes(u64),
-    //     line: usize = @import("std").mem.zeroes(usize),
-    //     level: libsql_tracing_level_t = @import("std").mem.zeroes(libsql_tracing_level_t),
-    // };
     std.debug.print("[{any}] {any} in {any}:{any}: {any} - {any}\n", .{
         log_t.message,
         log_t.target,
@@ -215,8 +207,7 @@ pub const Database = struct {
             return error.SelectNullResult;
         }
 
-        const column_count = c.libsql_rows_column_count(executed);
-        std.debug.print("column_count: {any}\n", .{column_count});
+        const column_count: i32 = c.libsql_rows_column_count(executed);
         const column_count_size: usize = @intCast(column_count);
 
         var next: c.libsql_row_t = undefined;
