@@ -33,6 +33,7 @@ pub const Database = struct {
         url: []const u8,
         path: []const u8,
         auth_key: ?[]const u8,
+        schema: []const u8,
     ) !Self {
         const result_parsed = try std.Uri.parse(url);
 
@@ -113,10 +114,13 @@ pub const Database = struct {
                 return error.SchemeNotFound;
             },
         }
-        return Database{
+
+        const db = Database{
             .conn = conn,
             .allocator = allocator,
         };
+        try batch_query(db, schema);
+        return db;
     }
 
     pub fn _query(self: Self, query: []const u8) !void {
@@ -140,23 +144,12 @@ pub const Database = struct {
         std.debug.print("executed statement {any}\n", .{executed.rows_changed});
     }
 
-    pub fn _create(self: Self, query: []const u8) !void {
-        const stmt = c.libsql_connection_prepare(self.conn, query.ptr);
-        if (stmt.err != null) {
-            std.debug.print(
-                "failed to prepare statement: {any}\n",
-                .{c.libsql_error_message(stmt.err).*},
-            );
-            return error.PrepareCreateTableError;
-        }
-
-        const executed = c.libsql_statement_execute(stmt);
-        if (executed.err != null) {
-            std.debug.print(
-                "failed to execute statement: {any}\n",
-                .{c.libsql_error_message(executed.err).*},
-            );
-            return error.CreateTableError;
+    pub fn batch_query(self: Self, query: []const u8) !void {
+        //
+        var iter = std.mem.splitSequence(u8, query, ";");
+        while (iter.next()) |item| {
+            if (item.len == 0) continue; // Skip empty statements
+            try self._query(item);
         }
     }
 
@@ -242,6 +235,7 @@ test "remote without auth" {
         "libsql:///libsql.zig.com",
         ":memory:",
         null,
+        "",
     )) |val| {
         std.debug.print("val: {any}\n", .{val});
         return error.ShouldBeAuthError;
@@ -256,6 +250,7 @@ test "local init" {
         "file://inmemory",
         ":memory:",
         null,
+        "",
     );
     defer db.deinit() catch |err| {
         std.debug.print("deinit error: {any}\n", .{err});
@@ -269,4 +264,19 @@ test "local init" {
     try db._query("INSERT INTO test (name) VALUES ('test')");
     try db._query("INSERT INTO test (name) VALUES ('test')");
     try db._select("SELECT * FROM test");
+}
+
+test "local init with schema" {
+    const db = try Database.init(std.testing.allocator, "file://inmemory", ":memory:", null,
+        \\ CREATE TABLE IF NOT EXISTS test (
+        \\      id INTEGER PRIMARY KEY AUTOINCREMENT,
+        \\      name TEXT
+        \\ );
+    );
+    defer db.deinit() catch |err| {
+        std.debug.print("deinit error: {any}\n", .{err});
+    };
+    try db._query("INSERT INTO test (name) VALUES ('test')");
+    try db._query("INSERT INTO test (name) VALUES ('test')");
+    // try db._select("SELECT * FROM test");
 }
