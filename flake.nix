@@ -77,6 +77,12 @@
                 ];
               };
 
+              git-hooks = {
+                hooks = {
+                  alejandra.enable = true;
+                };
+              };
+
               languages = {
                 zig = {
                   enable = true;
@@ -157,7 +163,7 @@
                   $EDITOR $REPO_ROOT/flake.nix
                 '';
 
-                build-libsqlc.exe = ''
+                build-libsqlc.exec = ''
                   cd ./vendor/libsql-c
                   sh build.sh
                   # TODO: copy build outputs
