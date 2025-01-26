@@ -11,7 +11,6 @@ const URLSchemas = enum {
 };
 
 fn logger(log_t: c.libsql_log_t) callconv(.C) void {
-
     // pub const libsql_log_t = extern struct {
     //     message: [*c]const u8 = @import("std").mem.zeroes([*c]const u8),
     //     target: [*c]const u8 = @import("std").mem.zeroes([*c]const u8),
@@ -29,6 +28,8 @@ fn logger(log_t: c.libsql_log_t) callconv(.C) void {
         log_t.level,
     });
 }
+
+const RowsAlignment = @alignOf(c.libsql_rows_t);
 
 pub const Database = struct {
     const Self = @This();
@@ -67,12 +68,14 @@ pub const Database = struct {
                 });
 
                 if (db.err != null) {
+                    defer c.libsql_error_deinit(db.err);
                     std.debug.print("failed to initialize local libsql database: {any}\n", .{db.err});
                     return error.InitError;
                 }
 
                 conn = c.libsql_database_connect(db);
                 if (conn.err != null) {
+                    defer c.libsql_error_deinit(conn.err);
                     std.debug.print("failed to connect to local libsql database: {any}\n", .{conn.err});
                     return error.ConnectError;
                 }
@@ -90,12 +93,14 @@ pub const Database = struct {
                 });
 
                 if (db.err != null) {
+                    defer c.libsql_error_deinit(db.err);
                     std.debug.print("failed to initialize remote libsql database: {any}\n", .{db.err});
                     return error.InitError;
                 }
 
                 conn = c.libsql_database_connect(db);
                 if (conn.err != null) {
+                    defer c.libsql_error_deinit(conn.err);
                     std.debug.print("failed to connect to remote libsql database: {any}\n", .{conn.err});
                     return error.ConnectError;
                 }
@@ -118,16 +123,6 @@ pub const Database = struct {
             return error.PrepareError;
         }
 
-        if (std.mem.startsWith(u8, query, "SELECT")) {
-            const executed = c.libsql_statement_query(stmt);
-            if (executed.err != null) {
-                const error_message = c.libsql_error_message(executed.err);
-                std.debug.print("failed to execute statement: {any}\n", .{error_message.*});
-                return error.ExecuteQueryError;
-            }
-            std.debug.print("executed statement {any}\n", .{executed.inner});
-            return;
-        }
         const executed = c.libsql_statement_execute(stmt);
         if (executed.err != null) {
             const error_message = c.libsql_error_message(executed.err);
@@ -135,6 +130,79 @@ pub const Database = struct {
             return error.ExecuteStatementError;
         }
         std.debug.print("executed statement {any}\n", .{executed.rows_changed});
+    }
+
+    pub fn _create(self: Self, query: []const u8) !void {
+        const stmt = c.libsql_connection_prepare(self.conn, query.ptr);
+        if (stmt.err != null) {
+            const error_message = c.libsql_error_message(stmt.err);
+            std.debug.print("failed to prepare statement: {any}\n", .{error_message.*});
+            return error.PrepareError;
+        }
+
+        const executed = c.libsql_statement_execute(stmt);
+        if (executed.err != null) {
+            const error_message = c.libsql_error_message(executed.err);
+            std.debug.print("failed to execute statement: {any}\n", .{error_message.*});
+            return error.ExecuteStatementError;
+        }
+    }
+
+    pub fn _drop(self: Self, query: []const u8) !void {
+        const stmt = c.libsql_connection_prepare(self.conn, query.ptr);
+        if (stmt.err != null) {
+            const error_message = c.libsql_error_message(stmt.err);
+            std.debug.print("failed to prepare statement: {any}\n", .{error_message.*});
+            return error.PrepareError;
+        }
+
+        const executed = c.libsql_statement_execute(stmt);
+        if (executed.err != null) {
+            const error_message = c.libsql_error_message(executed.err);
+            std.debug.print("failed to execute statement: {any}\n", .{error_message.*});
+            return error.ExecuteStatementError;
+        }
+    }
+
+    pub fn _select(self: Self, query: []const u8) !void {
+        //
+        const stmt = c.libsql_connection_prepare(self.conn, query.ptr);
+        defer c.libsql_statement_deinit(stmt);
+
+        if (stmt.err != null) {
+            std.debug.print("failed to prepare statement: {any}\n", .{c.libsql_error_message(stmt.err).*});
+            return error.PrepareError;
+        }
+
+        const executed = c.libsql_statement_query(stmt);
+        if (executed.err != null) {
+            std.debug.print("failed to execute statement: {any}\n", .{c.libsql_error_message(executed.err).*});
+            return error.ExecuteQueryError;
+        }
+
+        if (executed.inner == null) {
+            return error.SelectNullResult;
+        }
+
+        const column_count = c.libsql_rows_column_count(executed);
+        std.debug.print("column_count: {any}\n", .{column_count});
+        const column_count_size: usize = @intCast(column_count);
+
+        var next: c.libsql_row_t = undefined;
+        defer c.libsql_row_deinit(next);
+
+        for (0..column_count_size) |i| {
+            next = c.libsql_rows_next(executed);
+            const j: i32 = @intCast(i);
+            std.debug.print("j: {any}\n", .{j});
+            const val = c.libsql_row_value(next, j);
+            if (val.err != null) {
+                std.debug.print("failed to get value: {any}\n", .{val.err});
+                return error.GetValueError;
+            }
+            const print_result2 = &val.ok.value.text.ptr.?;
+            std.debug.print("got smn {any}\n", .{print_result2});
+        }
     }
 
     pub fn deinit(self: Self) !void {
@@ -169,5 +237,5 @@ test "local init" {
     try db._query("CREATE TABLE IF NOT EXISTS test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)");
     try db._query("INSERT INTO test (name) VALUES ('test')");
     try db._query("INSERT INTO test (name) VALUES ('test')");
-    try db._query("SELECT * FROM test");
+    try db._select("SELECT * FROM test");
 }
