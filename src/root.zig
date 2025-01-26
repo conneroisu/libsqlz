@@ -262,7 +262,7 @@ test "local init" {
     const db = try Database.init(
         std.testing.allocator,
         "file://inmemory",
-        "test.db",
+        ":memory:",
         null,
     );
     defer db.deinit() catch |err| {
