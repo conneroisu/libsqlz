@@ -119,11 +119,7 @@ pub const Database = struct {
             },
         }
 
-        const self = Database{
-            .conn = conn,
-            .db = db,
-            .allocator = allocator,
-        };
+        const self = Database{ .conn = conn, .db = db, .allocator = allocator };
         try batch_query(self, schema);
         return self;
     }
