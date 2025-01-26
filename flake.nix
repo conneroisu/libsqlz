@@ -1,10 +1,15 @@
 {
   inputs = {
     nixpkgs.url = "github:cachix/devenv-nixpkgs/rolling";
+
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+
     systems.url = "github:nix-systems/default";
-    devenv.url = "github:cachix/devenv";
-    devenv.inputs.nixpkgs.follows = "nixpkgs";
+
+    devenv = {
+      url = "github:cachix/devenv";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   nixConfig = {
@@ -69,29 +74,21 @@
                   "eamodio.gitlens"
                   "streetsidesoftware.code-spell-checker"
                   "editorconfig.editorconfig"
-                  "ms-vscode.cpptools"
                 ];
               };
 
               languages = {
-                nix = {
-                  enable = true;
-                };
-                c = {
-                  enable = true;
-                };
                 zig = {
                   enable = true;
                   package = pkgs-unstable.zig;
                 };
-                rust = {
-                  enable = true;
-                };
+                nix.enable = true;
+                c.enable = true;
+                rust.enable = true;
               };
 
               packages =
                 (with pkgs-unstable; [
-                  go
                   tcl
                   gnum4
 
@@ -100,7 +97,6 @@
                   gnumake
                   cmake
                   gcc
-                  gnum4
                   stdenv.cc
 
                   tbb # Intel Threading Building Blocks
@@ -138,15 +134,12 @@
                     (with pkgs-unstable; [
                       pkgs.mesa
                       stdenv.cc
-                      tbb # Intel Threading Building Blocks
-                      llvmPackages.openmp # OpenMP support
                     ])
                     ++ (with pkgs; [
                       ])
                     ++ (
                       pkgs.lib.optionals isLinux [
                         pkgs.xorg.libX11
-                        pkgs.ghdl
                       ]
                     )
                     ++ (
@@ -156,7 +149,6 @@
                         pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
                         pkgs.darwin.apple_sdk.frameworks.Foundation
                         pkgs.darwin.apple_sdk.frameworks.IOKit
-                        rosettaPkgs.ghdl
                       ]
                     )
                   )
