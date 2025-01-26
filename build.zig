@@ -1,5 +1,5 @@
 const std = @import("std");
-const libsqlz = @import("vendor/build.zig");
+const libsql = @import("vendor/build.zig");
 
 pub fn build(b: *std.Build) void {
     //
@@ -19,7 +19,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    libsqlz.build_libsql_c(b, target, optimize) catch |err| {
+    libsql.build_libsql_c(b, lib, target) catch |err| {
         std.debug.print("Failed to build libsql-c: {}\n", .{err});
         return;
     };

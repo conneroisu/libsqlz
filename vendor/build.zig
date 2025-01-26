@@ -22,7 +22,7 @@ fn get_lib_path(b: *std.Build, target: std.Build.ResolvedTarget) []const u8 {
         "target",
         triple,
         "release",
-        "libsql.a",
+        "liblibsql.a",
     }));
 }
 
@@ -65,15 +65,9 @@ fn build_target(b: *std.Build, target: std.Build.ResolvedTarget) !void {
 
 pub fn build_libsql_c(
     b: *std.Build,
+    lib: *std.Build.Step.Compile,
     target: std.Build.ResolvedTarget,
-    optimize: std.builtin.OptimizeMode,
 ) !void {
-    const lib = b.addStaticLibrary(.{
-        .name = "libsql-c",
-        .target = target,
-        .optimize = optimize,
-    });
-
     if (!try check_cached(b, target)) {
         try build_target(b, target);
     }
