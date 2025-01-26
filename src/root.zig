@@ -25,8 +25,10 @@ const RowsAlignment = @alignOf(c.libsql_rows_t);
 
 pub const Database = struct {
     const Self = @This();
-    conn: c.libsql_connection_t,
     allocator: std.mem.Allocator,
+
+    conn: c.libsql_connection_t,
+    db: c.libsql_database_t,
 
     pub fn init(
         allocator: std.mem.Allocator,
@@ -35,16 +37,17 @@ pub const Database = struct {
         auth_key: ?[]const u8,
         schema: []const u8,
     ) !Self {
-        const result_parsed = try std.Uri.parse(url);
+        const parsed_uri = try std.Uri.parse(url);
 
         const type_url = std.meta.stringToEnum(
             URLSchemas,
-            result_parsed.scheme,
+            parsed_uri.scheme,
         ) orelse {
             return error.SchemeNotFound;
         };
 
         var conn: c.libsql_connection_t = undefined;
+        var db: c.libsql_database_t = undefined;
 
         const setup = c.libsql_setup((c.libsql_config_t{
             .logger = logger,
@@ -55,13 +58,13 @@ pub const Database = struct {
 
         switch (type_url) {
             .file => {
-                const db = c.libsql_database_init( //
+                db = c.libsql_database_init( //
                     c.libsql_database_desc_t{
                     .path = path.ptr,
                 });
+                errdefer c.libsql_error_deinit(db.err);
 
                 if (db.err != null) {
-                    defer c.libsql_error_deinit(db.err);
                     std.debug.print(
                         "failed to initialize local libsql database: {any}\n",
                         .{c.libsql_error_message(db.err).*},
@@ -70,8 +73,8 @@ pub const Database = struct {
                 }
 
                 conn = c.libsql_database_connect(db);
+                errdefer c.libsql_error_deinit(conn.err);
                 if (conn.err != null) {
-                    defer c.libsql_error_deinit(conn.err);
                     std.debug.print(
                         "failed to connect to local libsql database: {any}\n",
                         .{c.libsql_error_message(conn.err).*},
@@ -84,15 +87,15 @@ pub const Database = struct {
                     return error.AuthKeyIsNull;
                 }
 
-                const db = c.libsql_database_init( //
+                db = c.libsql_database_init( //
                     c.libsql_database_desc_t{
                     .path = path.ptr,
                     .auth_token = auth_key.?.ptr,
                     .sync_interval = 1,
                 });
+                errdefer c.libsql_error_deinit(db.err);
 
                 if (db.err != null) {
-                    defer c.libsql_error_deinit(db.err);
                     std.debug.print(
                         "failed to initialize remote libsql database: {any}\n",
                         .{c.libsql_error_message(db.err).*},
@@ -101,8 +104,9 @@ pub const Database = struct {
                 }
 
                 conn = c.libsql_database_connect(db);
+                errdefer c.libsql_error_deinit(conn.err);
+
                 if (conn.err != null) {
-                    defer c.libsql_error_deinit(conn.err);
                     std.debug.print(
                         "failed to connect to remote libsql database: {any}\n",
                         .{c.libsql_error_message(conn.err).*},
@@ -115,16 +119,20 @@ pub const Database = struct {
             },
         }
 
-        const db = Database{
+        const self = Database{
             .conn = conn,
+            .db = db,
             .allocator = allocator,
         };
-        try batch_query(db, schema);
-        return db;
+        try batch_query(self, schema);
+        return self;
     }
 
     pub fn _query(self: Self, query: []const u8) !void {
+        //
         const stmt = c.libsql_connection_prepare(self.conn, query.ptr);
+        defer c.libsql_statement_deinit(stmt);
+
         if (stmt.err != null) {
             std.debug.print(
                 "failed to prepare statement: {any}\n",
@@ -141,7 +149,11 @@ pub const Database = struct {
             );
             return error.ExecuteStatementError;
         }
-        std.debug.print("executed statement {any}\n", .{executed.rows_changed});
+        // TODO: check/give executed.rows_changed
+        std.debug.print(
+            "executed statement {any}\n",
+            .{executed.rows_changed},
+        );
     }
 
     pub fn batch_query(self: Self, query: []const u8) !void {
@@ -156,6 +168,8 @@ pub const Database = struct {
     pub fn _drop(self: Self, query: []const u8) !void {
         //
         const stmt = c.libsql_connection_prepare(self.conn, query.ptr);
+        defer c.libsql_statement_deinit(stmt);
+
         if (stmt.err != null) {
             std.debug.print(
                 "failed to prepare statement: {any}\n",
@@ -172,6 +186,7 @@ pub const Database = struct {
             );
             return error.ExecuteDropTableError;
         }
+        // TODO: check/give executed.rows_changed
     }
 
     // TODO: Pass in a table struct to get the results.
@@ -225,7 +240,9 @@ pub const Database = struct {
     }
 
     pub fn deinit(self: Self) !void {
+        //
         c.libsql_connection_deinit(self.conn);
+        c.libsql_database_deinit(self.db);
     }
 };
 
