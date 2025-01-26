@@ -35,6 +35,11 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    libsql.build_libsql_c(b, lib_unit_tests, target) catch |err| {
+        std.debug.print("Failed to build libsql-c tests: {}\n", .{err});
+        return;
+    };
+
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
 
     // Similar to creating the run step earlier, this exposes a `test` step to
