@@ -69,14 +69,20 @@ pub const Database = struct {
 
                 if (db.err != null) {
                     defer c.libsql_error_deinit(db.err);
-                    std.debug.print("failed to initialize local libsql database: {any}\n", .{db.err});
+                    std.debug.print(
+                        "failed to initialize local libsql database: {any}\n",
+                        .{c.libsql_error_message(db.err).*},
+                    );
                     return error.InitError;
                 }
 
                 conn = c.libsql_database_connect(db);
                 if (conn.err != null) {
                     defer c.libsql_error_deinit(conn.err);
-                    std.debug.print("failed to connect to local libsql database: {any}\n", .{conn.err});
+                    std.debug.print(
+                        "failed to connect to local libsql database: {any}\n",
+                        .{c.libsql_error_message(conn.err).*},
+                    );
                     return error.ConnectError;
                 }
             },
@@ -94,14 +100,20 @@ pub const Database = struct {
 
                 if (db.err != null) {
                     defer c.libsql_error_deinit(db.err);
-                    std.debug.print("failed to initialize remote libsql database: {any}\n", .{db.err});
+                    std.debug.print(
+                        "failed to initialize remote libsql database: {any}\n",
+                        .{c.libsql_error_message(db.err).*},
+                    );
                     return error.InitError;
                 }
 
                 conn = c.libsql_database_connect(db);
                 if (conn.err != null) {
                     defer c.libsql_error_deinit(conn.err);
-                    std.debug.print("failed to connect to remote libsql database: {any}\n", .{conn.err});
+                    std.debug.print(
+                        "failed to connect to remote libsql database: {any}\n",
+                        .{c.libsql_error_message(conn.err).*},
+                    );
                     return error.ConnectError;
                 }
             },
@@ -118,15 +130,19 @@ pub const Database = struct {
     pub fn _query(self: Self, query: []const u8) !void {
         const stmt = c.libsql_connection_prepare(self.conn, query.ptr);
         if (stmt.err != null) {
-            const error_message = c.libsql_error_message(stmt.err);
-            std.debug.print("failed to prepare statement: {any}\n", .{error_message.*});
+            std.debug.print(
+                "failed to prepare statement: {any}\n",
+                .{c.libsql_error_message(stmt.err).*},
+            );
             return error.PrepareError;
         }
 
         const executed = c.libsql_statement_execute(stmt);
         if (executed.err != null) {
-            const error_message = c.libsql_error_message(executed.err);
-            std.debug.print("failed to execute statement: {any}\n", .{error_message.*});
+            std.debug.print(
+                "failed to execute statement: {any}\n",
+                .{c.libsql_error_message(executed.err).*},
+            );
             return error.ExecuteStatementError;
         }
         std.debug.print("executed statement {any}\n", .{executed.rows_changed});
@@ -135,31 +151,40 @@ pub const Database = struct {
     pub fn _create(self: Self, query: []const u8) !void {
         const stmt = c.libsql_connection_prepare(self.conn, query.ptr);
         if (stmt.err != null) {
-            const error_message = c.libsql_error_message(stmt.err);
-            std.debug.print("failed to prepare statement: {any}\n", .{error_message.*});
+            std.debug.print(
+                "failed to prepare statement: {any}\n",
+                .{c.libsql_error_message(stmt.err).*},
+            );
             return error.PrepareError;
         }
 
         const executed = c.libsql_statement_execute(stmt);
         if (executed.err != null) {
-            const error_message = c.libsql_error_message(executed.err);
-            std.debug.print("failed to execute statement: {any}\n", .{error_message.*});
+            std.debug.print(
+                "failed to execute statement: {any}\n",
+                .{c.libsql_error_message(executed.err).*},
+            );
             return error.ExecuteStatementError;
         }
     }
 
     pub fn _drop(self: Self, query: []const u8) !void {
+        //
         const stmt = c.libsql_connection_prepare(self.conn, query.ptr);
         if (stmt.err != null) {
-            const error_message = c.libsql_error_message(stmt.err);
-            std.debug.print("failed to prepare statement: {any}\n", .{error_message.*});
+            std.debug.print(
+                "failed to prepare statement: {any}\n",
+                .{c.libsql_error_message(stmt.err).*},
+            );
             return error.PrepareError;
         }
 
         const executed = c.libsql_statement_execute(stmt);
         if (executed.err != null) {
-            const error_message = c.libsql_error_message(executed.err);
-            std.debug.print("failed to execute statement: {any}\n", .{error_message.*});
+            std.debug.print(
+                "failed to execute statement: {any}\n",
+                .{c.libsql_error_message(executed.err).*},
+            );
             return error.ExecuteStatementError;
         }
     }
@@ -170,13 +195,19 @@ pub const Database = struct {
         defer c.libsql_statement_deinit(stmt);
 
         if (stmt.err != null) {
-            std.debug.print("failed to prepare statement: {any}\n", .{c.libsql_error_message(stmt.err).*});
+            std.debug.print(
+                "failed to prepare statement: {any}\n",
+                .{c.libsql_error_message(stmt.err).*},
+            );
             return error.PrepareError;
         }
 
         const executed = c.libsql_statement_query(stmt);
         if (executed.err != null) {
-            std.debug.print("failed to execute statement: {any}\n", .{c.libsql_error_message(executed.err).*});
+            std.debug.print(
+                "failed to execute statement: {any}\n",
+                .{c.libsql_error_message(executed.err).*},
+            );
             return error.ExecuteQueryError;
         }
 
@@ -197,7 +228,10 @@ pub const Database = struct {
             std.debug.print("j: {any}\n", .{j});
             const val = c.libsql_row_value(next, j);
             if (val.err != null) {
-                std.debug.print("failed to get value: {any}\n", .{val.err});
+                std.debug.print(
+                    "failed to get value: {any}\n",
+                    .{c.libsql_error_message(val.err).*},
+                );
                 return error.GetValueError;
             }
             const print_result2 = &val.ok.value.text.ptr.?;
@@ -213,7 +247,7 @@ pub const Database = struct {
 test "remote without auth" {
     if (Database.init(
         std.testing.allocator,
-        "libsql:///home/connerohnesorge/Documents/001Repos/conneroh.com/src/data/libsql.zig",
+        "libsql:///libsql.zig.com",
         ":memory:",
         null,
     )) |val| {
