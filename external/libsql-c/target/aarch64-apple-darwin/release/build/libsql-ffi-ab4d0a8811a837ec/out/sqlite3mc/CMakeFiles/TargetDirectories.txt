@@ -1,7 +1,0 @@
-/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-apple-darwin/release/build/libsql-ffi-ab4d0a8811a837ec/out/sqlite3mc/CMakeFiles/sqlite3mc_static.dir
-/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-apple-darwin/release/build/libsql-ffi-ab4d0a8811a837ec/out/sqlite3mc/CMakeFiles/edit_cache.dir
-/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-apple-darwin/release/build/libsql-ffi-ab4d0a8811a837ec/out/sqlite3mc/CMakeFiles/rebuild_cache.dir
-/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-apple-darwin/release/build/libsql-ffi-ab4d0a8811a837ec/out/sqlite3mc/CMakeFiles/list_install_components.dir
-/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-apple-darwin/release/build/libsql-ffi-ab4d0a8811a837ec/out/sqlite3mc/CMakeFiles/install.dir
-/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-apple-darwin/release/build/libsql-ffi-ab4d0a8811a837ec/out/sqlite3mc/CMakeFiles/install/local.dir
-/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/aarch64-apple-darwin/release/build/libsql-ffi-ab4d0a8811a837ec/out/sqlite3mc/CMakeFiles/install/strip.dir

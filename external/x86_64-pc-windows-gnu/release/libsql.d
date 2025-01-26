@@ -1,0 +1,1 @@
+/Users/connerohnesorge/Documents/001Repos/libsqlz/vendor/libsql-c/target/x86_64-pc-windows-gnu/release/libsql.dll: /Users/connerohnesorge/Documents/001Repos/libsqlz/vendor/libsql-c/macros/src/lib.rs /Users/connerohnesorge/Documents/001Repos/libsqlz/vendor/libsql-c/src/bindings.rs /Users/connerohnesorge/Documents/001Repos/libsqlz/vendor/libsql-c/src/lib.rs

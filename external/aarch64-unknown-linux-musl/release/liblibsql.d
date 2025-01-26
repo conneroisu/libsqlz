@@ -1,0 +1,1 @@
+/Users/connerohnesorge/Documents/001Repos/libsqlz/vendor/libsql-c/target/aarch64-unknown-linux-musl/release/liblibsql.so: /Users/connerohnesorge/Documents/001Repos/libsqlz/vendor/libsql-c/macros/src/lib.rs /Users/connerohnesorge/Documents/001Repos/libsqlz/vendor/libsql-c/src/bindings.rs /Users/connerohnesorge/Documents/001Repos/libsqlz/vendor/libsql-c/src/lib.rs

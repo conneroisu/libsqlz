@@ -1,2 +1,0 @@
-/nix/store/v0f9zjmnfsgmw04wlfya1w0bwfyz2l71-x86_64-w64-mingw32-gcc-wrapper-13.3.0/bin/x86_64-w64-mingw32-ar qc libsqlite3mc_static.a CMakeFiles/sqlite3mc_static.dir/src/sqlite3mc.c.obj
-/nix/store/v0f9zjmnfsgmw04wlfya1w0bwfyz2l71-x86_64-w64-mingw32-gcc-wrapper-13.3.0/bin/x86_64-w64-mingw32-ranlib libsqlite3mc_static.a

@@ -1,7 +1,0 @@
-.{
-    .name = "libsql-c",
-    .version = "0.0.12",
-    .paths = .{
-        "libsql-c",
-    },
-}

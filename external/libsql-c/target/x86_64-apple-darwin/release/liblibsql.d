@@ -1,1 +1,0 @@
-/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-apple-darwin/release/liblibsql.dylib: /Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/macros/src/lib.rs /Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/src/bindings.rs /Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/src/lib.rs

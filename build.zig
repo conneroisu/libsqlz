@@ -1,9 +1,12 @@
 const std = @import("std");
-const libsql = @import("vendor/build.zig");
+
+const path_libsql = "external";
 
 pub fn build(b: *std.Build) void {
     //
     const target = b.standardTargetOptions(.{});
+
+    const lib_dir = b.pathJoin(&.{ path_libsql, "target", get_target_triple(target), "release" });
 
     if (target.result.os.tag == .windows) {
         std.log.err("Windows is not supported yet. https://github.com/conneroisu/libsqlz/issues", .{});
@@ -19,14 +22,11 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    libsql.build_libsql_c(b, lib, target) catch |err| {
-        std.debug.print("Failed to build libsql-c: {}\n", .{err});
-        return;
-    };
+    lib.addIncludePath(b.path(path_libsql));
+    lib.addLibraryPath(b.path(lib_dir));
+    lib.linkSystemLibrary("libsql");
+    lib.linkLibC();
 
-    // This declares intent for the library to be installed into the standard
-    // location when the user invokes the "install" step (the default step when
-    // running `zig build`).
     b.installArtifact(lib);
 
     const lib_unit_tests = b.addTest(.{
@@ -35,17 +35,39 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    libsql.build_libsql_c(b, lib_unit_tests, target) catch |err| {
-        std.debug.print("Failed to build libsql-c tests: {}\n", .{err});
-        return;
-    };
+    lib_unit_tests.addIncludePath(b.path(path_libsql));
+    lib_unit_tests.addLibraryPath(b.path(lib_dir));
+    lib_unit_tests.linkSystemLibrary("libsql");
+    lib_unit_tests.linkLibC();
 
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
 
-    // Similar to creating the run step earlier, this exposes a `test` step to
-    // the `zig build --help` menu, providing a way for the user to request
-    // running the unit tests.
     const test_step = b.step("test", "Run unit tests");
 
     test_step.dependOn(&run_lib_unit_tests.step);
+}
+
+fn get_target_triple(target: std.Build.ResolvedTarget) []const u8 {
+    // TODO: Add support for musl
+    if (target.result.os.tag == .macos) {
+        return if (target.result.cpu.arch == .aarch64)
+            "aarch64-apple-darwin"
+        else
+            "x86_64-apple-darwin";
+    } else {
+        return if (target.result.cpu.arch == .aarch64)
+            "aarch64-unknown-linux-gnu"
+        else
+            "x86_64-unknown-linux-gnu";
+    }
+}
+
+fn get_lib_path(b: *std.Build, target: std.Build.ResolvedTarget) []const u8 {
+    const triple = get_target_triple(target);
+    return b.pathFromRoot(b.pathJoin(&.{
+        path_libsql,
+        "target",
+        triple,
+        "release",
+    }));
 }

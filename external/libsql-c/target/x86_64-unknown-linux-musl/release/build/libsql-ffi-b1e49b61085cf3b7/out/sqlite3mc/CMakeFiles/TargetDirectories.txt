@@ -1,7 +1,0 @@
-/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-unknown-linux-musl/release/build/libsql-ffi-b1e49b61085cf3b7/out/sqlite3mc/CMakeFiles/sqlite3mc_static.dir
-/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-unknown-linux-musl/release/build/libsql-ffi-b1e49b61085cf3b7/out/sqlite3mc/CMakeFiles/edit_cache.dir
-/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-unknown-linux-musl/release/build/libsql-ffi-b1e49b61085cf3b7/out/sqlite3mc/CMakeFiles/rebuild_cache.dir
-/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-unknown-linux-musl/release/build/libsql-ffi-b1e49b61085cf3b7/out/sqlite3mc/CMakeFiles/list_install_components.dir
-/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-unknown-linux-musl/release/build/libsql-ffi-b1e49b61085cf3b7/out/sqlite3mc/CMakeFiles/install.dir
-/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-unknown-linux-musl/release/build/libsql-ffi-b1e49b61085cf3b7/out/sqlite3mc/CMakeFiles/install/local.dir
-/Users/connerohnesorge/Documents/001Repos/libsqlz/external/libsql-c/target/x86_64-unknown-linux-musl/release/build/libsql-ffi-b1e49b61085cf3b7/out/sqlite3mc/CMakeFiles/install/strip.dir
