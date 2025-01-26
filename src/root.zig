@@ -155,7 +155,7 @@ pub const Database = struct {
                 "failed to prepare statement: {any}\n",
                 .{c.libsql_error_message(stmt.err).*},
             );
-            return error.PrepareError;
+            return error.PrepareCreateTableError;
         }
 
         const executed = c.libsql_statement_execute(stmt);
@@ -164,7 +164,7 @@ pub const Database = struct {
                 "failed to execute statement: {any}\n",
                 .{c.libsql_error_message(executed.err).*},
             );
-            return error.ExecuteStatementError;
+            return error.CreateTableError;
         }
     }
 
@@ -176,7 +176,7 @@ pub const Database = struct {
                 "failed to prepare statement: {any}\n",
                 .{c.libsql_error_message(stmt.err).*},
             );
-            return error.PrepareError;
+            return error.PrepareDropTableError;
         }
 
         const executed = c.libsql_statement_execute(stmt);
@@ -185,7 +185,7 @@ pub const Database = struct {
                 "failed to execute statement: {any}\n",
                 .{c.libsql_error_message(executed.err).*},
             );
-            return error.ExecuteStatementError;
+            return error.ExecuteDropTableError;
         }
     }
 
@@ -199,7 +199,7 @@ pub const Database = struct {
                 "failed to prepare statement: {any}\n",
                 .{c.libsql_error_message(stmt.err).*},
             );
-            return error.PrepareError;
+            return error.PrepareSelectError;
         }
 
         const executed = c.libsql_statement_query(stmt);
@@ -208,7 +208,7 @@ pub const Database = struct {
                 "failed to execute statement: {any}\n",
                 .{c.libsql_error_message(executed.err).*},
             );
-            return error.ExecuteQueryError;
+            return error.ExecuteSelectError;
         }
 
         if (executed.inner == null) {
