@@ -35,7 +35,7 @@ pub const Database = struct {
         url: []const u8,
         path: []const u8,
         auth_key: ?[]const u8,
-        schema: []const u8,
+        comptime schema: []const u8,
     ) !Self {
         const parsed_uri = try std.Uri.parse(url);
 
