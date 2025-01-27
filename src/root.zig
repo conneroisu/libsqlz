@@ -10,8 +10,7 @@ const c = @cImport({
 const URLSchemas = enum {
     file,
     libsql,
-    remote,
-    @"file libsql remote",
+    @"file libsql",
 };
 
 fn logger(log_t: c.libsql_log_t) callconv(.C) void {
@@ -32,6 +31,7 @@ pub const Config = struct {
 
     comptime schema_delimiter: []const u8 = ";",
     comptime trim_whitespace: bool = true,
+    comptime sync_interval: u8 = 0, // default is off
 
     auth_key: ?[]const u8 = null,
 
@@ -95,23 +95,13 @@ pub const Database = struct {
                     .url = url.ptr,
                     .path = path.ptr,
                     .auth_token = cfg.auth_key.?.ptr,
-                    .sync_interval = 1,
-                    .synced = true,
                 };
-            },
-            .remote => {
-                if (cfg.auth_key == null or cfg.auth_key.?.len == 0) {
-                    return error.AuthKeyIsNull;
+                if (cfg.sync_interval > 0) {
+                    db_conf.sync_interval = cfg.sync_interval;
+                    db_conf.synced = true;
                 }
-
-                db_conf = c.libsql_database_desc_t{
-                    .url = url.ptr,
-                    .path = path.ptr,
-                    .auth_token = cfg.auth_key.?.ptr,
-                    .sync_interval = 1,
-                };
             },
-            .@"file libsql remote" => {
+            .@"file libsql" => {
                 return error.SchemeNotFound;
             },
         }
@@ -310,7 +300,8 @@ pub const Database = struct {
         c.libsql_database_deinit(self.db);
     }
 };
-test "remote without auth" {
+
+test "sync without auth" {
     if (Database.init(
         std.testing.allocator,
         "libsql://libsqlz.com",
