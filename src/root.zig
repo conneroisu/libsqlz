@@ -96,7 +96,6 @@ pub const Database = struct {
             },
             .libsql => {
                 if (config.auth_key == null or config.auth_key.?.len == 0) {
-                    std.debug.print("Auth key is null\n", .{});
                     return error.AuthKeyIsNull;
                 }
 
@@ -133,39 +132,18 @@ pub const Database = struct {
         }
 
         const self = Database{ .conn = conn, .db = db, .allocator = config.allocator };
-        const queries = comptime Self._split_schema(
+        const queries = comptime _split_schema(
             schema,
             config.schema_delimiter,
             config.trim_whitespace,
         );
         for (queries) |query| {
-            _ = try self._query(query);
+            _ = try self.__query(query);
         }
         return self;
     }
 
-    fn _split_schema(
-        comptime schema: []const u8,
-        comptime delimiter: []const u8,
-        comptime trim_whitespace: bool,
-    ) []const []const u8 {
-        comptime {
-            var queries: []const []const u8 = &.{};
-            var iter = std.mem.splitSequence(u8, schema, delimiter);
-            while (iter.next()) |item| {
-                if (item.len == 0) continue;
-                const query = if (trim_whitespace)
-                    std.mem.trim(u8, item, &std.ascii.whitespace)
-                else
-                    item;
-                if (query.len == 0) continue;
-                queries = queries ++ [_][]const u8{query};
-            }
-            return queries;
-        }
-    }
-
-    pub fn _query(self: Self, query: []const u8) !u64 {
+    pub fn __query(self: Self, query: []const u8) !u64 {
         //
         const stmt = c.libsql_connection_prepare(self.conn, query.ptr);
         defer c.libsql_statement_deinit(stmt);
@@ -189,13 +167,37 @@ pub const Database = struct {
         return executed.rows_changed;
     }
 
-    pub fn batch_query(self: Self, query: []const u8) !void {
-        //
-        var iter = std.mem.splitSequence(u8, query, ";");
-        while (iter.next()) |item| {
-            if (item.len == 0) continue; // Skip empty statements
-            try self._query(item);
+    pub fn _query(self: Self, comptime format: []const u8, args: anytype) !u64 {
+        // Allocate memory for the formatted query
+        const query = try std.fmt.allocPrint(self.allocator, format, args);
+        defer self.allocator.free(query); // Ensure memory is freed
+
+        // Add null termination for C string
+        const c_query = try self.allocator.allocSentinel(u8, query.len, 0);
+        defer self.allocator.free(c_query);
+        @memcpy(c_query, query);
+
+        // Prepare the statement using the null-terminated string
+        const stmt = c.libsql_connection_prepare(self.conn, c_query.ptr);
+        defer c.libsql_statement_deinit(stmt);
+
+        if (stmt.err != null) {
+            std.debug.print(
+                "failed to prepare statement: {any} `{s}`\n",
+                .{ c.libsql_error_message(stmt.err).*, query },
+            );
+            return error.PrepareError;
         }
+
+        const executed = c.libsql_statement_execute(stmt);
+        if (executed.err != null) {
+            std.debug.print(
+                "failed to execute statement: {any}\n",
+                .{c.libsql_error_message(executed.err).*},
+            );
+            return error.ExecuteStatementError;
+        }
+        return executed.rows_changed;
     }
 
     // TODO: Pass in a table struct to get the results.
@@ -271,59 +273,75 @@ test "remote without auth" {
     }
 }
 
-test "local init" {
-    // const db = try Database.init(
-    //     std.testing.allocator,
-    //     "file://inmemory",
-    //     ":memory:",
-    //     null,
-    //     "",
-    // );
-    const db = try Database.init(Config{
-        .allocator = std.testing.allocator,
-        .url = "file://inmemory",
-        .path = ":memory:",
-        .auth_key = null,
-    }, "");
-    defer db.deinit() catch |err| {
-        std.debug.print("deinit error: {any}\n", .{err});
-    };
-    _ = try db._query(
-        \\ CREATE TABLE IF NOT EXISTS test (
-        \\      id INTEGER PRIMARY KEY AUTOINCREMENT,
-        \\      name TEXT
-        \\ );
-    );
-    const rows2 = try db._query("INSERT INTO test (name) VALUES ('test2')");
-    std.debug.print("rows2: {any}\n", .{rows2});
-    assert(rows2 == 1);
-    const rows3 = try db._query("INSERT INTO test (name) VALUES ('test3')");
-    std.debug.print("rows3: {any}\n", .{rows3});
-    assert(rows3 == 1);
-    try db._select("SELECT * FROM test");
-}
+// test "local init" {
+//     const schema =
+//         \\ CREATE TABLE IF NOT EXISTS test (
+//         \\      id INTEGER PRIMARY KEY AUTOINCREMENT,
+//         \\      name TEXT
+//         \\ );
+//     ;
+//     const db = try Database.init(
+//         Config{
+//             .allocator = std.testing.allocator,
+//             .url = "file://inmemory",
+//             .path = ":memory:",
+//             .auth_key = null,
+//         },
+//         schema,
+//     );
+//     defer db.deinit() catch |err| {
+//         std.debug.print("deinit error: {any}\n", .{err});
+//     };
+//     const rows2 = try db._query("INSERT INTO test (name) VALUES ('test2')");
+//     assert(rows2 == 1);
+//     const rows3 = try db._query("INSERT INTO test (name) VALUES ('test3')");
+//     assert(rows3 == 1);
+//     try db._select("SELECT * FROM test");
+// }
 
 test "local init with schema" {
-    // const db = try Database.init(std.testing.allocator, "file://inmemory", ":memory:", null,
-    //     \\ CREATE TABLE IF NOT EXISTS test (
-    //     \\      id INTEGER PRIMARY KEY AUTOINCREMENT,
-    //     \\      name TEXT
-    //     \\ );
-    // );
-    const db = try Database.init(Config{ .allocator = std.testing.allocator, .url = "file://inmemory", .path = ":memory:", .auth_key = null },
+    const schema =
         \\ CREATE TABLE IF NOT EXISTS test (
         \\      id INTEGER PRIMARY KEY AUTOINCREMENT,
         \\      name TEXT
         \\ );
+    ;
+    const db = try Database.init(
+        Config{
+            .allocator = std.testing.allocator,
+            .url = "file://inmemory",
+            .path = ":memory:",
+            .auth_key = null,
+        },
+        schema,
     );
     defer db.deinit() catch |err| {
         std.debug.print("deinit error: {any}\n", .{err});
     };
-    const rows = try db._query("INSERT INTO test (name) VALUES ('test1')");
-    std.debug.print("rows: {d}\n", .{rows});
+    const rows = try db._query("INSERT INTO test (name) VALUES ('{s}');", .{"test1"});
     assert(rows == 1);
-    const rows2 = try db._query("INSERT INTO test (name) VALUES ('test2')");
-    std.debug.print("rows2: {d}\n", .{rows2});
+    const rows2 = try db._query("INSERT INTO test (name) VALUES ('{s}')", .{"test2"});
     assert(rows2 == 1);
     // try db._select("SELECT * FROM test");
+}
+
+fn _split_schema(
+    comptime schema: []const u8,
+    comptime delimiter: []const u8,
+    comptime trim_whitespace: bool,
+) []const []const u8 {
+    comptime {
+        var queries: []const []const u8 = &.{};
+        var iter = std.mem.splitSequence(u8, schema, delimiter);
+        while (iter.next()) |item| {
+            if (item.len == 0) continue;
+            const query = if (trim_whitespace)
+                std.mem.trim(u8, item, &std.ascii.whitespace)
+            else
+                item;
+            if (query.len == 0) continue;
+            queries = queries ++ [_][]const u8{query};
+        }
+        return queries;
+    }
 }
