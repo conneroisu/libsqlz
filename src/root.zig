@@ -168,34 +168,38 @@ pub const Database = struct {
     }
 
     pub fn _query(self: Self, comptime format: []const u8, args: anytype) !u64 {
-        // Allocate memory for the formatted query
-        const query = try std.fmt.allocPrint(self.allocator, format, args);
-        defer self.allocator.free(query); // Ensure memory is freed
+        //
+        const query = try std.fmt.allocPrintZ(
+            self.allocator,
+            format,
+            args,
+        );
+        defer self.allocator.free(query);
 
-        // Add null termination for C string
-        const c_query = try self.allocator.allocSentinel(u8, query.len, 0);
-        defer self.allocator.free(c_query);
-        @memcpy(c_query, query);
-
-        // Prepare the statement using the null-terminated string
-        const stmt = c.libsql_connection_prepare(self.conn, c_query.ptr);
+        const stmt = c.libsql_connection_prepare(self.conn, query.ptr);
         defer c.libsql_statement_deinit(stmt);
+        {
+            errdefer c.libsql_error_deinit(stmt.err);
 
-        if (stmt.err != null) {
-            std.debug.print(
-                "failed to prepare statement: {any} `{s}`\n",
-                .{ c.libsql_error_message(stmt.err).*, query },
-            );
-            return error.PrepareError;
+            if (stmt.err != null) {
+                std.debug.print(
+                    "failed to prepare statement: {any} `{s}`\n",
+                    .{ c.libsql_error_message(stmt.err).*, query },
+                );
+                return error.PrepareError;
+            }
         }
 
         const executed = c.libsql_statement_execute(stmt);
-        if (executed.err != null) {
-            std.debug.print(
-                "failed to execute statement: {any}\n",
-                .{c.libsql_error_message(executed.err).*},
-            );
-            return error.ExecuteStatementError;
+        {
+            errdefer c.libsql_error_deinit(executed.err);
+            if (executed.err != null) {
+                std.debug.print(
+                    "failed to execute statement: {any}\n",
+                    .{c.libsql_error_message(executed.err).*},
+                );
+                return error.ExecuteStatementError;
+            }
         }
         return executed.rows_changed;
     }
@@ -273,32 +277,6 @@ test "remote without auth" {
     }
 }
 
-// test "local init" {
-//     const schema =
-//         \\ CREATE TABLE IF NOT EXISTS test (
-//         \\      id INTEGER PRIMARY KEY AUTOINCREMENT,
-//         \\      name TEXT
-//         \\ );
-//     ;
-//     const db = try Database.init(
-//         Config{
-//             .allocator = std.testing.allocator,
-//             .url = "file://inmemory",
-//             .path = ":memory:",
-//             .auth_key = null,
-//         },
-//         schema,
-//     );
-//     defer db.deinit() catch |err| {
-//         std.debug.print("deinit error: {any}\n", .{err});
-//     };
-//     const rows2 = try db._query("INSERT INTO test (name) VALUES ('test2')");
-//     assert(rows2 == 1);
-//     const rows3 = try db._query("INSERT INTO test (name) VALUES ('test3')");
-//     assert(rows3 == 1);
-//     try db._select("SELECT * FROM test");
-// }
-
 test "local init with schema" {
     const schema =
         \\ CREATE TABLE IF NOT EXISTS test (
@@ -318,11 +296,17 @@ test "local init with schema" {
     defer db.deinit() catch |err| {
         std.debug.print("deinit error: {any}\n", .{err});
     };
-    const rows = try db._query("INSERT INTO test (name) VALUES ('{s}');", .{"test1"});
+    const rows = try db._query(
+        "INSERT INTO test (name) VALUES ('{s}');",
+        .{"test1"},
+    );
     assert(rows == 1);
-    const rows2 = try db._query("INSERT INTO test (name) VALUES ('{s}')", .{"test2"});
+    const rows2 = try db._query(
+        "INSERT INTO test (name) VALUES ('{s}')",
+        .{"test2"},
+    );
     assert(rows2 == 1);
-    // try db._select("SELECT * FROM test");
+    try db._select("SELECT * FROM test");
 }
 
 fn _split_schema(
