@@ -8,6 +8,7 @@ const c = @cImport({
 const URLSchemas = enum {
     file,
     libsql,
+    remote,
     @"file libsql",
 };
 
@@ -60,6 +61,7 @@ pub const Database = struct {
 
         var conn: c.libsql_connection_t = undefined;
         var db: c.libsql_database_t = undefined;
+        var db_conf: c.libsql_database_desc_t = undefined;
 
         const setup = c.libsql_setup((c.libsql_config_t{
             .logger = logger,
@@ -70,65 +72,62 @@ pub const Database = struct {
 
         switch (type_url) {
             .file => {
-                db = c.libsql_database_init( //
-                    c.libsql_database_desc_t{
+                db_conf = c.libsql_database_desc_t{
                     .path = config.path.ptr,
-                });
-                errdefer c.libsql_error_deinit(db.err);
-
-                if (db.err != null) {
-                    std.debug.print(
-                        "failed to initialize local libsql database: {any}\n",
-                        .{c.libsql_error_message(db.err).*},
-                    );
-                    return error.InitError;
-                }
-
-                conn = c.libsql_database_connect(db);
-                errdefer c.libsql_error_deinit(conn.err);
-                if (conn.err != null) {
-                    std.debug.print(
-                        "failed to connect to local libsql database: {any}\n",
-                        .{c.libsql_error_message(conn.err).*},
-                    );
-                    return error.ConnectError;
-                }
+                };
             },
             .libsql => {
                 if (config.auth_key == null or config.auth_key.?.len == 0) {
                     return error.AuthKeyIsNull;
                 }
 
-                db = c.libsql_database_init( //
-                    c.libsql_database_desc_t{
+                db_conf = c.libsql_database_desc_t{
+                    .url = config.url.ptr,
                     .path = config.path.ptr,
                     .auth_token = config.auth_key.?.ptr,
                     .sync_interval = 1,
-                });
-                errdefer c.libsql_error_deinit(db.err);
-
-                if (db.err != null) {
-                    std.debug.print(
-                        "failed to initialize remote libsql database: {any}\n",
-                        .{c.libsql_error_message(db.err).*},
-                    );
-                    return error.InitError;
+                    .synced = true,
+                };
+            },
+            .remote => {
+                if (config.auth_key == null or config.auth_key.?.len == 0) {
+                    return error.AuthKeyIsNull;
                 }
 
-                conn = c.libsql_database_connect(db);
-                errdefer c.libsql_error_deinit(conn.err);
-
-                if (conn.err != null) {
-                    std.debug.print(
-                        "failed to connect to remote libsql database: {any}\n",
-                        .{c.libsql_error_message(conn.err).*},
-                    );
-                    return error.ConnectError;
-                }
+                db_conf = c.libsql_database_desc_t{
+                    .url = config.url.ptr,
+                    .path = config.path.ptr,
+                    .auth_token = config.auth_key.?.ptr,
+                    .sync_interval = 1,
+                };
             },
             .@"file libsql" => {
                 return error.SchemeNotFound;
             },
+        }
+
+        db = c.libsql_database_init(db_conf);
+        {
+            errdefer c.libsql_error_deinit(db.err);
+            if (db.err != null) {
+                std.debug.print(
+                    "failed to initialize libsql database: {any}\n",
+                    .{c.libsql_error_message(db.err).*},
+                );
+                return error.InitError;
+            }
+        }
+
+        conn = c.libsql_database_connect(db);
+        {
+            errdefer c.libsql_error_deinit(conn.err);
+            if (conn.err != null) {
+                std.debug.print(
+                    "failed to connect to libsql database: {any}\n",
+                    .{c.libsql_error_message(conn.err).*},
+                );
+                return error.ConnectError;
+            }
         }
 
         const self = Database{ .conn = conn, .db = db, .allocator = config.allocator };
