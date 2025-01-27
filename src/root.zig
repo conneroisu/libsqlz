@@ -27,12 +27,15 @@ const RowsAlignment = @alignOf(c.libsql_rows_t);
 
 pub const Config = struct {
     allocator: std.mem.Allocator,
+
     comptime schema_delimiter: []const u8 = ";",
     comptime trim_whitespace: bool = true,
-    // defaults to in memory
+
     url: []const u8 = "file://inmemory",
     path: []const u8 = ":memory:",
     auth_key: ?[]const u8 = null,
+
+    logger: ?fn (log_t: c.libsql_log_t) callconv(.C) void = null,
 };
 
 pub const Database = struct {
@@ -59,12 +62,10 @@ pub const Database = struct {
             return error.SchemeNotFound;
         };
 
-        var conn: c.libsql_connection_t = undefined;
-        var db: c.libsql_database_t = undefined;
         var db_conf: c.libsql_database_desc_t = undefined;
 
         const setup = c.libsql_setup((c.libsql_config_t{
-            .logger = logger,
+            .logger = config.logger.?,
         }));
         if (setup != null) {
             return error.SetupError;
@@ -106,7 +107,7 @@ pub const Database = struct {
             },
         }
 
-        db = c.libsql_database_init(db_conf);
+        const db = c.libsql_database_init(db_conf);
         {
             errdefer c.libsql_error_deinit(db.err);
             if (db.err != null) {
@@ -118,7 +119,7 @@ pub const Database = struct {
             }
         }
 
-        conn = c.libsql_database_connect(db);
+        const conn = c.libsql_database_connect(db);
         {
             errdefer c.libsql_error_deinit(conn.err);
             if (conn.err != null) {
@@ -267,6 +268,7 @@ test "remote without auth" {
             .url = "libsql://libsqlz.com",
             .path = "test.db",
             .auth_key = null,
+            .logger = logger,
         },
         "",
     )) |_| {
@@ -289,6 +291,7 @@ test "local init with schema" {
             .url = "file://inmemory",
             .path = ":memory:",
             .auth_key = null,
+            .logger = logger,
         },
         schema,
     );
