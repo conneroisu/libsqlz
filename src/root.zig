@@ -1,4 +1,6 @@
 const std = @import("std");
+const schemas = @import("schemas.zig");
+const utilities = @import("utilities.zig");
 const assert = std.debug.assert;
 
 const c = @cImport({
@@ -9,14 +11,14 @@ const URLSchemas = enum {
     file,
     libsql,
     remote,
-    @"file libsql",
+    @"file libsql remote",
 };
 
 fn logger(log_t: c.libsql_log_t) callconv(.C) void {
     std.debug.print("[{s}] {s} in {s}:{d}: {d} - {d}\n", .{
-        cToString(log_t.message).?,
-        cToString(log_t.target).?,
-        cToString(log_t.file).?,
+        utilities.cToString(log_t.message).?,
+        utilities.cToString(log_t.target).?,
+        utilities.cToString(log_t.file).?,
         log_t.timestamp,
         log_t.line,
         log_t.level,
@@ -26,16 +28,14 @@ fn logger(log_t: c.libsql_log_t) callconv(.C) void {
 const RowsAlignment = @alignOf(c.libsql_rows_t);
 
 pub const Config = struct {
-    allocator: std.mem.Allocator,
+    const Self = @This();
 
     comptime schema_delimiter: []const u8 = ";",
     comptime trim_whitespace: bool = true,
 
-    url: []const u8 = "file://inmemory",
-    path: []const u8 = ":memory:",
     auth_key: ?[]const u8 = null,
 
-    logger: ?fn (log_t: c.libsql_log_t) callconv(.C) void = null,
+    logger: ?*const fn (log_t: c.libsql_log_t) callconv(.C) void = null,
 };
 
 pub const Database = struct {
@@ -44,16 +44,23 @@ pub const Database = struct {
 
     conn: c.libsql_connection_t,
     db: c.libsql_database_t,
-    const SchemaOptions = struct {
-        delimiter: []const u8 = ";",
-        trim_whitespace: bool = true,
-    };
+
+    schema: schemas.Schema,
 
     pub fn init(
-        config: Config,
+        allocator: std.mem.Allocator,
+        url: []const u8,
+        path: []const u8,
+        cfg: Config,
         comptime schema: []const u8,
     ) !Self {
-        const parsed_uri = try std.Uri.parse(config.url);
+        const processed = comptime _process_schema(
+            schema,
+            cfg.schema_delimiter,
+            cfg.trim_whitespace,
+        );
+
+        const parsed_uri = try std.Uri.parse(url);
 
         const type_url = std.meta.stringToEnum(
             URLSchemas,
@@ -64,9 +71,11 @@ pub const Database = struct {
 
         var db_conf: c.libsql_database_desc_t = undefined;
 
-        const setup = c.libsql_setup((c.libsql_config_t{
-            .logger = config.logger.?,
-        }));
+        const setup_conf = c.libsql_config_t{
+            .logger = cfg.logger,
+        };
+
+        const setup = c.libsql_setup(setup_conf);
         if (setup != null) {
             return error.SetupError;
         }
@@ -74,35 +83,35 @@ pub const Database = struct {
         switch (type_url) {
             .file => {
                 db_conf = c.libsql_database_desc_t{
-                    .path = config.path.ptr,
+                    .path = path.ptr,
                 };
             },
             .libsql => {
-                if (config.auth_key == null or config.auth_key.?.len == 0) {
+                if (cfg.auth_key == null or cfg.auth_key.?.len == 0) {
                     return error.AuthKeyIsNull;
                 }
 
                 db_conf = c.libsql_database_desc_t{
-                    .url = config.url.ptr,
-                    .path = config.path.ptr,
-                    .auth_token = config.auth_key.?.ptr,
+                    .url = url.ptr,
+                    .path = path.ptr,
+                    .auth_token = cfg.auth_key.?.ptr,
                     .sync_interval = 1,
                     .synced = true,
                 };
             },
             .remote => {
-                if (config.auth_key == null or config.auth_key.?.len == 0) {
+                if (cfg.auth_key == null or cfg.auth_key.?.len == 0) {
                     return error.AuthKeyIsNull;
                 }
 
                 db_conf = c.libsql_database_desc_t{
-                    .url = config.url.ptr,
-                    .path = config.path.ptr,
-                    .auth_token = config.auth_key.?.ptr,
+                    .url = url.ptr,
+                    .path = path.ptr,
+                    .auth_token = cfg.auth_key.?.ptr,
                     .sync_interval = 1,
                 };
             },
-            .@"file libsql" => {
+            .@"file libsql remote" => {
                 return error.SchemeNotFound;
             },
         }
@@ -131,15 +140,17 @@ pub const Database = struct {
             }
         }
 
-        const self = Database{ .conn = conn, .db = db, .allocator = config.allocator };
-        const queries = comptime _split_schema(
-            schema,
-            config.schema_delimiter,
-            config.trim_whitespace,
-        );
-        for (queries) |query| {
+        const self = Self{
+            .conn = conn,
+            .db = db,
+            .allocator = allocator,
+            .schema = processed.schema_info,
+        };
+
+        for (processed.queries) |query| {
             _ = try self.__query(query);
         }
+
         return self;
     }
 
@@ -204,7 +215,42 @@ pub const Database = struct {
         return executed.rows_changed;
     }
 
-    // TODO: Pass in a table struct to get the results.
+    fn _process_schema(
+        comptime schema: []const u8,
+        comptime delimiter: []const u8,
+        comptime trim_whitespace: bool,
+    ) struct {
+        queries: []const []const u8,
+        schema_info: schemas.Schema,
+    } {
+        comptime {
+            var queries: []const []const u8 = &.{};
+            var tables: []const schemas.TableInfo = &.{};
+
+            var iter = std.mem.splitSequence(u8, schema, delimiter);
+            while (iter.next()) |item| {
+                if (item.len == 0) continue;
+                const query = if (trim_whitespace)
+                    std.mem.trim(u8, item, &std.ascii.whitespace)
+                else
+                    item;
+                if (query.len == 0) continue;
+
+                queries = queries ++ [_][]const u8{query};
+
+                // Parse CREATE TABLE statements
+                if (schemas.parseCreateTable(query)) |table_info| {
+                    tables = tables ++ [_]schemas.TableInfo{table_info};
+                }
+            }
+
+            return .{
+                .queries = queries,
+                .schema_info = schemas.Schema{ .tables = tables },
+            };
+        }
+    }
+
     pub fn _select(self: Self, query: []const u8) !void {
         //
         const stmt = c.libsql_connection_prepare(self.conn, query.ptr);
@@ -237,10 +283,16 @@ pub const Database = struct {
         var next: c.libsql_row_t = undefined;
         defer c.libsql_row_deinit(next);
 
+        try self.schema._present_schema();
         for (0..column_count_size) |i| {
             next = c.libsql_rows_next(executed);
             const j: i32 = @intCast(i);
-            std.debug.print("j: {any}\n", .{j});
+
+            const name = try utilities.sliceToString(c.libsql_row_name(next, j));
+            std.debug.print("name: {s}\n", .{name});
+            const col_type = self.schema.getTable(name);
+            std.debug.print("col_type: {any}\n", .{col_type});
+
             const val = c.libsql_row_value(next, j);
             if (val.err != null) {
                 std.debug.print(
@@ -249,8 +301,6 @@ pub const Database = struct {
                 );
                 return error.GetValueError;
             }
-            const print_result2 = &val.ok.value.text.ptr.?;
-            std.debug.print("got smn {any}\n", .{print_result2});
         }
     }
 
@@ -260,13 +310,12 @@ pub const Database = struct {
         c.libsql_database_deinit(self.db);
     }
 };
-
 test "remote without auth" {
     if (Database.init(
+        std.testing.allocator,
+        "libsql://libsqlz.com",
+        "test.db",
         Config{
-            .allocator = std.testing.allocator,
-            .url = "libsql://libsqlz.com",
-            .path = "test.db",
             .auth_key = null,
             .logger = logger,
         },
@@ -285,21 +334,22 @@ test "local init with schema" {
         \\      name TEXT
         \\ );
     ;
-    const db = try Database.init(
+    const cfg =
         Config{
-            .allocator = std.testing.allocator,
-            .url = "file://inmemory",
-            .path = ":memory:",
-            .auth_key = null,
-            .logger = logger,
-        },
+        .auth_key = null,
+    };
+    const db = try Database.init(
+        std.testing.allocator,
+        "file://inmemory",
+        ":memory:",
+        cfg,
         schema,
     );
     defer db.deinit() catch |err| {
         std.debug.print("deinit error: {any}\n", .{err});
     };
     const rows = try db._query(
-        "INSERT INTO test (name) VALUES ('{s}');",
+        "INSERT INTO test (name) VALUES ('{s}')",
         .{"test1"},
     );
     assert(rows == 1);
@@ -309,29 +359,4 @@ test "local init with schema" {
     );
     assert(rows2 == 1);
     try db._select("SELECT * FROM test");
-}
-
-fn _split_schema(
-    comptime schema: []const u8,
-    comptime delimiter: []const u8,
-    comptime trim_whitespace: bool,
-) []const []const u8 {
-    comptime {
-        var queries: []const []const u8 = &.{};
-        var iter = std.mem.splitSequence(u8, schema, delimiter);
-        while (iter.next()) |item| {
-            if (item.len == 0) continue;
-            const query = if (trim_whitespace)
-                std.mem.trim(u8, item, &std.ascii.whitespace)
-            else
-                item;
-            if (query.len == 0) continue;
-            queries = queries ++ [_][]const u8{query};
-        }
-        return queries;
-    }
-}
-fn cToString(ptr: [*c]const u8) ?[]const u8 {
-    if (ptr == null) return "";
-    return ptr[0..std.mem.len(ptr)];
 }
