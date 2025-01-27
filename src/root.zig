@@ -13,10 +13,10 @@ const URLSchemas = enum {
 };
 
 fn logger(log_t: c.libsql_log_t) callconv(.C) void {
-    std.debug.print("[{any}] {any} in {any}:{any}: {any} - {any}\n", .{
-        log_t.message.*,
-        log_t.target.*,
-        log_t.file.*,
+    std.debug.print("[{s}] {s} in {s}:{d}: {d} - {d}\n", .{
+        cToString(log_t.message).?,
+        cToString(log_t.target).?,
+        cToString(log_t.file).?,
         log_t.timestamp,
         log_t.line,
         log_t.level,
@@ -327,4 +327,8 @@ fn _split_schema(
         }
         return queries;
     }
+}
+fn cToString(ptr: [*c]const u8) ?[]const u8 {
+    if (ptr == null) return "";
+    return ptr[0..std.mem.len(ptr)];
 }
