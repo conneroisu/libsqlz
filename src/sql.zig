@@ -1,5 +1,6 @@
 const log = @import("std").log;
 const sliceToString = @import("utilities.zig").sliceToString;
+const cToString = @import("utilities.zig").cToString;
 const assert = @import("std").debug.assert;
 const mem = @import("std").mem;
 const meta = @import("std").meta;
@@ -37,28 +38,33 @@ pub fn SQLEncoder(comptime T: type) type {
             var field_names = ArrayList([]const u8).init(allocator);
             defer field_names.deinit();
 
+            // Get number of columns
             const column_count: i32 = c.libsql_rows_column_count(rows);
             const column_count_size: usize = @intCast(column_count);
 
             // Capture column names so we know how to map each row field.
             for (0..column_count_size) |i| {
                 const j: i32 = @intCast(i);
+                // c.libsql_rows_column_name returns a libsql_slice_t
+                // so we can call sliceToString on it
                 const name = try sliceToString(c.libsql_rows_column_name(rows, j));
                 try field_names.append(name);
             }
 
             var row = c.libsql_rows_next(rows);
-            // Keep iterating until row.err != null or we exhaust the rows
-            while (row.err == null) : (row = c.libsql_rows_next(rows)) {
+
+            // Keep iterating as long as row.err == null AND row.inner != null
+            // (the library sets row.inner = null once the rowset is exhausted)
+            while (row.err == null and row.inner != null) : (row = c.libsql_rows_next(rows)) {
                 var item: T = undefined;
 
-                // For each field in our T, find matching column by name:
-                inline for (meta.fields(T)) |field| {
+                // For each field in T, find the matching column
+                inline for (meta.fields(T)) |field_info| {
                     var col_idx: ?i32 = null;
 
-                    // Attempt to find field.name among the column names
+                    // Attempt to find `field_info.name` among the column names
                     for (field_names.items, 0..) |col_name, idx| {
-                        if (mem.eql(u8, col_name, field.name)) {
+                        if (mem.eql(u8, col_name, field_info.name)) {
                             col_idx = @intCast(idx);
                             break;
                         }
@@ -67,90 +73,96 @@ pub fn SQLEncoder(comptime T: type) type {
                     if (col_idx) |actual_idx| {
                         // Grab the column value
                         const val = c.libsql_row_value(row, actual_idx);
-                        log.debug("Field: {any}, E: {any}", .{ field.name, val.err });
+
+                        // If there's an error reading this column, log & fail
                         if (val.err != null) {
+                            // c.libsql_error_message returns [*c]const u8
+                            // so use cToString to build a safe slice
+                            const err_ptr = c.libsql_error_message(val.err);
+                            const reason = cToString(err_ptr) orelse "(unknown)";
+                            log.warn("[SQLEncoder] Unable to read field '{s}', reason: '{s}'\n", .{ field_info.name, reason });
                             return error.ValueError;
                         }
 
-                        // Switch on the column's known runtime type
+                        // Now switch on the runtime type
                         switch (val.ok.type) {
-                            //////////////////////////////////
+                            ////////////////////////////////////////////////////////////////////////////
                             // TEXT
-                            //////////////////////////////////
+                            ////////////////////////////////////////////////////////////////////////////
                             c.LIBSQL_TYPE_TEXT => {
-                                switch (field.type) {
+                                switch (field_info.type) {
                                     // Non-optional text field
                                     []const u8 => {
-                                        @field(item, field.name) =
+                                        @field(item, field_info.name) =
                                             try sliceToString(val.ok.value.text);
                                     },
                                     // Optional text field
                                     ?[]const u8 => {
-                                        @field(item, field.name) =
+                                        @field(item, field_info.name) =
                                             try sliceToString(val.ok.value.text);
                                     },
                                     else => return error.TypeMismatch,
                                 }
                             },
 
-                            //////////////////////////////////
+                            ////////////////////////////////////////////////////////////////////////////
                             // INTEGER
-                            //////////////////////////////////
+                            ////////////////////////////////////////////////////////////////////////////
                             c.LIBSQL_TYPE_INTEGER => {
-                                switch (field.type) {
+                                switch (field_info.type) {
                                     // Non-optional integers
-                                    i64 => @field(item, field.name) = val.ok.value.integer,
-                                    u64 => @field(item, field.name) = @intCast(val.ok.value.integer),
-                                    i32 => @field(item, field.name) = @intCast(val.ok.value.integer),
-                                    u32 => @field(item, field.name) = @intCast(val.ok.value.integer),
+                                    i64 => @field(item, field_info.name) = val.ok.value.integer,
+                                    u64 => @field(item, field_info.name) = @intCast(val.ok.value.integer),
+                                    i32 => @field(item, field_info.name) = @intCast(val.ok.value.integer),
+                                    u32 => @field(item, field_info.name) = @intCast(val.ok.value.integer),
 
                                     // Optional integers
-                                    ?i64 => @field(item, field.name) = val.ok.value.integer,
-                                    ?u64 => @field(item, field.name) = @intCast(val.ok.value.integer),
-                                    ?i32 => @field(item, field.name) = @intCast(val.ok.value.integer),
-                                    ?u32 => @field(item, field.name) = @intCast(val.ok.value.integer),
+                                    ?i64 => @field(item, field_info.name) = val.ok.value.integer,
+                                    ?u64 => @field(item, field_info.name) = @intCast(val.ok.value.integer),
+                                    ?i32 => @field(item, field_info.name) = @intCast(val.ok.value.integer),
+                                    ?u32 => @field(item, field_info.name) = @intCast(val.ok.value.integer),
 
                                     else => return error.TypeMismatch,
                                 }
                             },
 
-                            //////////////////////////////////
-                            // REAL (float)
-                            //////////////////////////////////
+                            ////////////////////////////////////////////////////////////////////////////
+                            // REAL
+                            ////////////////////////////////////////////////////////////////////////////
                             c.LIBSQL_TYPE_REAL => {
-                                switch (field.type) {
+                                switch (field_info.type) {
                                     // Non-optional floats
-                                    f64 => @field(item, field.name) = val.ok.value.real,
-                                    f32 => @field(item, field.name) = @floatCast(val.ok.value.real),
+                                    f64 => @field(item, field_info.name) = val.ok.value.real,
+                                    f32 => @field(item, field_info.name) = @floatCast(val.ok.value.real),
 
                                     // Optional floats
-                                    ?f64 => @field(item, field.name) = val.ok.value.real,
-                                    ?f32 => @field(item, field.name) = @floatCast(val.ok.value.real),
+                                    ?f64 => @field(item, field_info.name) = val.ok.value.real,
+                                    ?f32 => @field(item, field_info.name) = @floatCast(val.ok.value.real),
 
                                     else => return error.TypeMismatch,
                                 }
                             },
 
-                            //////////////////////////////////
+                            ////////////////////////////////////////////////////////////////////////////
                             // NULL
-                            //////////////////////////////////
+                            ////////////////////////////////////////////////////////////////////////////
                             c.LIBSQL_TYPE_NULL => {
-                                // If the DB value is actually NULL, only optional fields can hold `null`
-                                switch (field.type) {
-                                    ?[]const u8 => @field(item, field.name) = null,
-                                    ?i64 => @field(item, field.name) = null,
-                                    ?u64 => @field(item, field.name) = null,
-                                    ?f64 => @field(item, field.name) = null,
-                                    ?f32 => @field(item, field.name) = null,
-                                    ?i32 => @field(item, field.name) = null,
-                                    ?u32 => @field(item, field.name) = null,
+                                // If the DB value is actually NULL, only optional fields can store null
+                                switch (field_info.type) {
+                                    ?[]const u8 => @field(item, field_info.name) = null,
+                                    ?i64 => @field(item, field_info.name) = null,
+                                    ?u64 => @field(item, field_info.name) = null,
+                                    ?f64 => @field(item, field_info.name) = null,
+                                    ?f32 => @field(item, field_info.name) = null,
+                                    ?i32 => @field(item, field_info.name) = null,
+                                    ?u32 => @field(item, field_info.name) = null,
                                     else => return error.TypeMismatch,
                                 }
                             },
 
-                            //////////////////////////////////
-                            // Anything else is not supported
-                            //////////////////////////////////
+                            ////////////////////////////////////////////////////////////////////////////
+                            // Any other type is not supported
+                            ////////////////////////////////////////////////////////////////////////////
                             else => return error.UnsupportedType,
                         }
                     }
@@ -160,7 +172,15 @@ pub fn SQLEncoder(comptime T: type) type {
                 try items.append(item);
             }
 
-            // Return all decoded rows as a slice
+            // If we exited the loop because row.err != null, we can log it
+            if (row.err != null) {
+                const err_ptr = c.libsql_error_message(row.err);
+                const reason = cToString(err_ptr) orelse "(unknown row fetch error)";
+                log.warn("[SQLEncoder] row iteration error: '{s}'\n", .{reason});
+                return error.ValueError;
+            }
+
+            // Return all decoded rows
             return items.toOwnedSlice();
         }
     };
