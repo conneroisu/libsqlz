@@ -8,6 +8,9 @@ const c = @cImport({
     @cInclude("libsql.h");
 });
 
+///
+/// The different types of URLs that libsqlz can parse/use.
+///
 const URLSchemas = enum {
     file,
     libsql,
@@ -25,8 +28,9 @@ pub fn logger(log_t: c.libsql_log_t) callconv(.C) void {
     });
 }
 
-const RowsAlignment = @alignOf(c.libsql_rows_t);
-
+///
+/// Configuration options for a libsqlz database connection.
+///
 pub const Config = struct {
     const Self = @This();
 
