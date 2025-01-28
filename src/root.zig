@@ -425,7 +425,8 @@ test "local init with schema and encoding" {
     defer std.testing.allocator.free(results);
 
     // Verify results
-    try std.testing.expectEqual(results.len, 101); // 100 bulk inserts + 1 initial insert
+    // 100 bulk inserts + 1 initial insert
+    try std.testing.expectEqual(results.len, 101);
     try std.testing.expectEqualStrings(results[0].name, "test1");
 
     // Check some random entries
