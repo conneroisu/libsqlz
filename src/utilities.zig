@@ -20,6 +20,7 @@ pub fn sliceToString(slice: c.libsql_slice_t) ![]const u8 {
     // Create a slice from the pointer and length, excluding null terminator
     return bytes[0..len];
 }
+
 pub fn cToString(ptr: [*c]const u8) ?[]const u8 {
     if (ptr == null) return "";
     return ptr[0..std.mem.len(ptr)];

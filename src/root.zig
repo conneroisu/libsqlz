@@ -40,6 +40,47 @@ pub const Config = struct {
     logger: ?*const fn (log_t: c.libsql_log_t) callconv(.C) void = null,
 };
 
+///
+/// A libsql database connection.
+///
+/// This struct is the main entry point for interacting with a libsql database.
+/// It provides methods for executing queries, selecting data, and more.
+///
+/// Example usage:
+/// ```zig
+/// const libsqlz = @import("libsqlz");
+/// const std = @import("std");
+///
+/// pub fn main() !void {
+///     const allocator = std.heap.page_allocator;
+///     const cfg = libsqlz.Config{
+///         .auth_key = null,
+///         .logging = false,
+///     };
+///     const db = try libsqlz.Database.init(
+///         allocator,
+///         "file:///path/to/db.db",
+///         ":memory:",
+///         cfg,
+///         "",
+///     );
+///     defer db.deinit() catch unreachable;
+///
+///     // Insert a row
+///     _ = try db._query(
+///         "INSERT INTO test (name) VALUES ('test')",
+///         .{},
+///     );
+///
+///     // Select data
+///     const results = try db._select([]const u8, "SELECT * FROM test");
+///     defer std.testing.allocator.free(results);
+///
+///     // Verify results
+///     try std.testing.expectEqual(results.len, 1);
+///     try std.testing.expectEqualStrings(results[0], "test");
+/// }
+/// ```
 pub const Database = struct {
     const Self = @This();
     allocator: std.mem.Allocator,
@@ -49,6 +90,42 @@ pub const Database = struct {
 
     schema: schemas.Schema,
 
+    ///
+    /// Initializes a new `Database` instance.
+    /// This function initializes a new `Database` instance and connects to the specified database.
+    ///
+    /// Parameters:
+    /// - `allocator`: The allocator to use for memory allocation.
+    /// - `url`: The URL of the database to connect to.
+    /// - `path`: The path to the database file.
+    /// - `cfg`: The configuration options for the database connection.
+    /// - `schema`: The schema of the database, as a string.
+    ///
+    /// Returns:
+    /// - `Self`: The initialized `Database` instance.
+    ///
+    /// Example usage:
+    /// ```zig
+    /// const libsqlz = @import("libsqlz");
+    /// const std = @import("std");
+    ///
+    /// pub fn main() !void {
+    ///     const allocator = std.heap.page_allocator;
+    ///     const cfg = libsqlz.Config{
+    ///         .auth_key = null,
+    ///         .logging = false,
+    ///     };
+    ///     const db = try libsqlz.Database.init(
+    ///         allocator,
+    ///         "file:///path/to/db.db",
+    ///         ":memory:",
+    ///         cfg,
+    ///         "",
+    ///     );
+    ///     defer db.deinit() catch unreachable;
+    ///     // ...
+    /// }
+    /// ```
     pub fn init(
         allocator: std.mem.Allocator,
         url: []const u8,
@@ -56,7 +133,6 @@ pub const Database = struct {
         cfg: Config,
         comptime schema: []const u8,
     ) !Self {
-
         // Add null terminator for C string
         const url_with_null = try allocator.dupeZ(u8, url);
         defer allocator.free(url_with_null);
@@ -146,26 +222,26 @@ pub const Database = struct {
             .schema = processed.schema_info,
         };
 
-        for (processed.queries) |query| {
-            _ = try self.__query(query);
+        for (processed.queries) |stmt| {
+            _ = try self.__query(stmt);
         }
 
         return self;
     }
 
-    pub fn __query(self: Self, query: []const u8) !u64 {
-        const stmt = c.libsql_connection_prepare(self.conn, query.ptr);
-        defer c.libsql_statement_deinit(stmt);
+    pub fn __query(self: Self, stmt: []const u8) !u64 {
+        const c_stmt = c.libsql_connection_prepare(self.conn, stmt.ptr);
+        defer c.libsql_statement_deinit(c_stmt);
 
-        if (stmt.err != null) {
+        if (c_stmt.err != null) {
             std.debug.print(
                 "failed to prepare statement: {any}\n",
-                .{c.libsql_error_message(stmt.err).*},
+                .{c.libsql_error_message(c_stmt.err).*},
             );
             return error.PrepareError;
         }
 
-        const executed = c.libsql_statement_execute(stmt);
+        const executed = c.libsql_statement_execute(c_stmt);
         if (executed.err != null) {
             std.debug.print(
                 "failed to execute statement: {any}\n",
@@ -176,21 +252,21 @@ pub const Database = struct {
         return executed.rows_changed;
     }
 
-    pub fn _query(self: Self, comptime format: []const u8, args: anytype) !u64 {
-        const query = try std.fmt.allocPrintZ(
+    pub fn query(self: Self, comptime format: []const u8, args: anytype) !u64 {
+        const c_query = try std.fmt.allocPrintZ(
             self.allocator,
             format,
             args,
         );
-        defer self.allocator.free(query);
-        const stmt = c.libsql_connection_prepare(self.conn, query.ptr);
+        defer self.allocator.free(c_query);
+        const stmt = c.libsql_connection_prepare(self.conn, c_query.ptr);
         defer c.libsql_statement_deinit(stmt);
         {
             errdefer c.libsql_error_deinit(stmt.err);
             if (stmt.err != null) {
                 std.debug.print(
                     "failed to prepare statement: {any} `{s}`\n",
-                    .{ c.libsql_error_message(stmt.err).*, query },
+                    .{ c.libsql_error_message(stmt.err).*, c_query },
                 );
                 return error.PrepareError;
             }
@@ -223,13 +299,13 @@ pub const Database = struct {
             var iter = std.mem.splitSequence(u8, schema, delimiter);
             while (iter.next()) |item| {
                 if (item.len == 0) continue;
-                const query = if (trim_whitespace)
+                const stmt = if (trim_whitespace)
                     std.mem.trim(u8, item, &std.ascii.whitespace)
                 else
                     item;
-                if (query.len == 0) continue;
-                queries = queries ++ [_][]const u8{query};
-                if (schemas.parseCreateTable(query)) |table_info| {
+                if (stmt.len == 0) continue;
+                queries = queries ++ [_][]const u8{stmt};
+                if (schemas.parseCreateTable(stmt)) |table_info| {
                     tables = tables ++ [_]schemas.TableInfo{table_info};
                 }
             }
@@ -241,19 +317,19 @@ pub const Database = struct {
     }
 
     // Modified _select method for the Database struct
-    pub fn _select(self: Self, comptime T: type, query: []const u8) ![]T {
-        const stmt = c.libsql_connection_prepare(self.conn, query.ptr);
-        defer c.libsql_statement_deinit(stmt);
+    pub fn _select(self: Self, comptime T: type, stmt: []const u8) ![]T {
+        const c_query = c.libsql_connection_prepare(self.conn, stmt.ptr);
+        defer c.libsql_statement_deinit(c_query);
 
-        if (stmt.err != null) {
+        if (c_query.err != null) {
             std.debug.print(
                 "failed to prepare statement: {any}\n",
-                .{c.libsql_error_message(stmt.err).*},
+                .{c.libsql_error_message(c_query.err).*},
             );
             return error.PrepareSelectError;
         }
 
-        const executed = c.libsql_statement_query(stmt);
+        const executed = c.libsql_statement_query(c_query);
         if (executed.err != null) {
             std.debug.print(
                 "failed to execute statement: {any}\n",
@@ -324,7 +400,7 @@ test "local init with schema and encoding" {
     };
 
     // Insert initial test row
-    const rows = try db._query(
+    const rows = try db.query(
         "INSERT INTO test (name) VALUES ('{s}')",
         .{"test1"},
     );
@@ -333,7 +409,7 @@ test "local init with schema and encoding" {
     for (0..100) |i| {
         var buf: [256]u8 = undefined;
         const str = try std.fmt.bufPrint(&buf, "test{}", .{i});
-        const rows11 = try db._query(
+        const rows11 = try db.query(
             "INSERT INTO test (name) VALUES ('{s}')",
             .{str},
         );
@@ -395,13 +471,13 @@ test "encoder handles null values" {
     defer db.deinit() catch unreachable;
 
     // Insert a row with NULL values
-    _ = try db._query(
+    _ = try db.query(
         "INSERT INTO nullable_test (name, age, score) VALUES (NULL, NULL, NULL)",
         .{},
     );
 
     // Insert a row with mixed NULL and non-NULL values
-    _ = try db._query(
+    _ = try db.query(
         "INSERT INTO nullable_test (name, age, score) VALUES ('test', NULL, 42.5)",
         .{},
     );
@@ -445,7 +521,7 @@ test "encoder type mismatch handling" {
     );
     defer db.deinit() catch unreachable;
 
-    _ = try db._query(
+    _ = try db.query(
         "INSERT INTO type_test (id, value) VALUES (1, 'test')",
         .{},
     );

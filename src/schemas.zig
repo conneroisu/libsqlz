@@ -1,10 +1,24 @@
 const std = @import("std");
 
+///
+/// Schema is a collection of tables created at comptime.
+///
+/// It can be used to ensure validity of queries at comptime.
+///
+/// Usage:
+/// ```zig
+/// const schema = Schema.init(allocator);
+/// defer schema.deinit();
+///
+/// try schema.load("CREATE TABLE users (id INTEGER, name TEXT);");
+/// try schema.load("CREATE TABLE customers (id INTEGER, name TEXT);");
+/// ```
+///
 pub const Schema = struct {
     const Self = @This();
     tables: []const TableInfo,
 
-    pub fn getTable(
+    pub fn _getTable(
         self: *const Schema,
         name: []const u8,
     ) !TableInfo {
@@ -16,12 +30,12 @@ pub const Schema = struct {
         return error.TableNotFound;
     }
 
-    pub fn getColumn(
+    pub fn _getColumn(
         self: *const Schema,
         table_name: []const u8,
         column_name: []const u8,
     ) !ColumnInfo {
-        const table = try self.getTable(table_name);
+        const table = try self._getTable(table_name);
 
         for (table.columns, 0..) |column, i| {
             if (std.mem.eql(u8, column.name, column_name)) {
