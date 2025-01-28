@@ -457,8 +457,6 @@ test "encoder type mismatch handling" {
         Config{},
         schema,
     );
-    defer db.deinit() catch unreachable;
-
     _ = try db.query(
         "INSERT INTO type_test (id, value) VALUES (1, 'test')",
         .{},
@@ -475,4 +473,39 @@ test "encoder type mismatch handling" {
     } else |err| {
         try std.testing.expectEqual(err, error.TypeMismatch);
     }
+
+    const dbb = try Database(schema).init(db);
+    defer dbb.deinit() catch unreachable;
+    _ = dbb.select(InvalidRow, "SELECT * FROM type_test") catch |err| {
+        try std.testing.expectEqual(err, error.TypeMismatch);
+    };
+}
+
+pub fn Database(
+    comptime schema: []const u8,
+) type {
+    const processed = comptime _process_schema(
+        schema,
+        ";",
+        true,
+    );
+    return struct {
+        const Self = @This();
+        base: Db,
+
+        pub fn init(base_inst: Db) !Self {
+            return Self{
+                .base = base_inst,
+            };
+        }
+
+        pub fn select(self: Self, comptime T: type, comptime format: []const u8) ![]T {
+            // This should return an error due to type mismatch
+            return self.base._select(T, format, processed.schema_info);
+        }
+
+        pub fn deinit(self: Self) !void {
+            try self.base.deinit();
+        }
+    };
 }
