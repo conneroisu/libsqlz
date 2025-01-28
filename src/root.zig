@@ -52,41 +52,6 @@ pub const Config = struct {
 /// This struct is the main entry point for interacting with a libsql database.
 /// It provides methods for executing queries, selecting data, and more.
 ///
-/// Example usage:
-/// ```zig
-/// const libsqlz = @import("libsqlz");
-/// const std = @import("std");
-///
-/// pub fn main() !void {
-///     const allocator = std.heap.page_allocator;
-///     const cfg = libsqlz.Config{
-///         .auth_key = null,
-///         .logging = false,
-///     };
-///     const db = try libsqlz.Database.init(
-///         allocator,
-///         "file:///path/to/db.db",
-///         ":memory:",
-///         cfg,
-///         "",
-///     );
-///     defer db.deinit() catch unreachable;
-///
-///     // Insert a row
-///     _ = try db._query(
-///         "INSERT INTO test (name) VALUES ('test')",
-///         .{},
-///     );
-///
-///     // Select data
-///     const results = try db._select([]const u8, "SELECT * FROM test");
-///     defer std.testing.allocator.free(results);
-///
-///     // Verify results
-///     try std.testing.expectEqual(results.len, 1);
-///     try std.testing.expectEqualStrings(results[0], "test");
-/// }
-/// ```
 pub const Database = struct {
     const Self = @This();
     allocator: std.mem.Allocator,
@@ -110,28 +75,6 @@ pub const Database = struct {
     /// Returns:
     /// - `Self`: The initialized `Database` instance.
     ///
-    /// Example usage:
-    /// ```zig
-    /// const libsqlz = @import("libsqlz");
-    /// const std = @import("std");
-    ///
-    /// pub fn main() !void {
-    ///     const allocator = std.heap.page_allocator;
-    ///     const cfg = libsqlz.Config{
-    ///         .auth_key = null,
-    ///         .logging = false,
-    ///     };
-    ///     const db = try libsqlz.Database.init(
-    ///         allocator,
-    ///         "file:///path/to/db.db",
-    ///         ":memory:",
-    ///         cfg,
-    ///         "",
-    ///     );
-    ///     defer db.deinit() catch unreachable;
-    ///     // ...
-    /// }
-    /// ```
     pub fn init(
         allocator: std.mem.Allocator,
         url: []const u8,
