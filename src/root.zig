@@ -15,7 +15,6 @@ const URLSchemas = enum {
     libsql,
     @"file libsql",
 };
-
 pub fn logger(log_t: c.libsql_log_t) callconv(.C) void {
     std.debug.print("[{s}] {s} in {s}:{d}: {d} - {d}\n", .{
         cToString(log_t.message).?,
@@ -40,7 +39,7 @@ pub const Config = struct {
     logger: ?*const fn (log_t: c.libsql_log_t) callconv(.C) void = null,
 };
 
-pub const Database = struct {
+pub const Db = struct {
     const Self = @This();
     allocator: std.mem.Allocator,
 
@@ -282,7 +281,7 @@ fn _process_schema(
 }
 
 test "sync without auth" {
-    if (Database.init(
+    if (Db.init(
         std.testing.allocator,
         "libsql://libsqlz.com",
         "test.db",
@@ -317,7 +316,7 @@ test "local init with schema and encoding" {
         .logging = false,
     };
 
-    const db = try Database.init(
+    const db = try Db.init(
         std.testing.allocator,
         "file:///dummy", // dummy value for path as it is local/inmemory
         ":memory:",
@@ -395,7 +394,7 @@ test "encoder handles null values" {
         score: ?f64,
     };
 
-    const db = try Database.init(
+    const db = try Db.init(
         std.testing.allocator,
         "file:///dummy", // dummy value for path as it is local/inmemory
         ":memory:",
@@ -451,7 +450,7 @@ test "encoder type mismatch handling" {
         value: i64,
     };
 
-    const db = try Database.init(
+    const db = try Db.init(
         std.testing.allocator,
         "file:///dummy", // dummy value for path as it is local/inmemory
         ":memory:",
