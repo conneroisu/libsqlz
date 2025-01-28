@@ -300,7 +300,7 @@ test "local init with schema and encoding" {
 
     const db = try Database.init(
         std.testing.allocator,
-        "file://dummy", // dummy value for path as it is local/inmemory
+        "file:///dummy", // dummy value for path as it is local/inmemory
         ":memory:",
         cfg,
         schema,
