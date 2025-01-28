@@ -4,20 +4,40 @@ pub const Schema = struct {
     const Self = @This();
     tables: []const TableInfo,
 
-    pub fn getTable(self: *const Schema, name: []const u8) ?*const TableInfo {
+    pub fn getTable(
+        self: *const Schema,
+        name: []const u8,
+    ) !TableInfo {
         for (self.tables) |table| {
             if (std.mem.eql(u8, table.name, name)) {
-                return &table;
+                return table;
             }
         }
-        return null;
+        return error.TableNotFound;
+    }
+
+    pub fn getColumn(
+        self: *const Schema,
+        table_name: []const u8,
+        column_name: []const u8,
+    ) !ColumnInfo {
+        const table = try self.getTable(table_name);
+
+        for (table.columns, 0..) |column, i| {
+            if (std.mem.eql(u8, column.name, column_name)) {
+                std.debug.print("found column '{s}'\n", .{column.name});
+                return table.columns[i];
+            }
+        }
+
+        return error.ColumnNotFound;
     }
 
     pub fn _present_schema(self: Self) !void {
         for (self.tables) |table| {
-            std.debug.print("table: {s}\n", .{table.name});
+            std.debug.print("table: '{s}'\n", .{table.name});
             for (table.columns) |column| {
-                std.debug.print("    column: {s} {s}\n", .{ column.name, @tagName(column.type) });
+                std.debug.print("    column: '{s}' : '{s}'\n", .{ column.name, @tagName(column.type) });
             }
         }
     }
@@ -106,4 +126,51 @@ pub fn parseCreateTable(comptime query: []const u8) ?TableInfo {
         .name = table_name,
         .columns = columns,
     };
+}
+
+pub fn parseTableNameFromSelect(query: []const u8) ![]const u8 {
+    const from_pattern = "FROM";
+
+    // Find the FROM keyword
+    var words = std.mem.split(u8, query, " ");
+    var found_from = false;
+    var next_word: ?[]const u8 = null;
+
+    while (words.next()) |word| {
+        const trimmed = std.mem.trim(u8, word, &std.ascii.whitespace);
+        if (found_from) {
+            if (trimmed.len > 0) {
+                next_word = trimmed;
+                break;
+            }
+            continue;
+        }
+        if (std.ascii.eqlIgnoreCase(trimmed, from_pattern)) {
+            found_from = true;
+        }
+    }
+
+    if (next_word) |table| {
+        // Remove any trailing characters like semicolons, commas, etc
+        var end: usize = 0;
+        for (table, 0..) |c, i| {
+            if (!std.ascii.isAlphanumeric(c) and c != '_' and c != '.') {
+                break;
+            }
+            end = i + 1;
+        }
+        return table[0..end];
+    }
+
+    std.log.debug("Table name: '{s} not found in select statement\n", .{query});
+    return error.TableColumnNotFound;
+}
+
+test "parse table name from select" {
+    const testing = std.testing;
+
+    try testing.expectEqualStrings(try parseTableNameFromSelect("SELECT * FROM users"), "users");
+    try testing.expectEqualStrings(try parseTableNameFromSelect("SELECT id, name FROM   customers WHERE id > 5"), "customers");
+    try testing.expectEqualStrings(try parseTableNameFromSelect("SELECT * FROM schema.table;"), "schema.table");
+    try testing.expectEqualStrings(try parseTableNameFromSelect("SELECT * from USERS where id = 1"), "USERS");
 }
