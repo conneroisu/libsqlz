@@ -330,8 +330,6 @@ test "local init with schema and encoding" {
     );
     assert(rows == 1);
 
-    // Bulk insert test data
-    var timer = try std.time.Timer.start();
     for (0..100) |i| {
         var buf: [256]u8 = undefined;
         const str = try std.fmt.bufPrint(&buf, "test{}", .{i});
@@ -341,9 +339,6 @@ test "local init with schema and encoding" {
         );
         assert(rows11 == 1);
     }
-    const elapsed_ns = timer.read();
-    const elapsed_ms = @as(f64, @floatFromInt(elapsed_ns)) / 1_000_000.0;
-    std.debug.print("Time taken: {d:.2}ms\n", .{elapsed_ms});
 
     // Test the new encoder functionality
     const results = try db._select(TestRow, "SELECT * FROM test");
