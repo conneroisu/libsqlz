@@ -190,15 +190,7 @@ pub const Database = struct {
             return errors.ExecuteError.PrepareError;
         }
 
-        const executed = c.libsql_statement_execute(c_stmt);
-        if (executed.err != null) {
-            std.debug.print(
-                "failed to execute statement: {any}\n",
-                .{c.libsql_error_message(executed.err).*},
-            );
-            return errors.ExecuteError.ExecuteStatementError;
-        }
-        return executed.rows_changed;
+        return _statement_execute(&c_stmt);
     }
 
     pub fn query(self: Self, comptime format: []const u8, args: anytype) !u64 {
@@ -220,63 +212,7 @@ pub const Database = struct {
                 return errors.ExecuteError.PrepareError;
             }
         }
-        const executed = c.libsql_statement_execute(stmt);
-        {
-            errdefer c.libsql_error_deinit(executed.err);
-            if (executed.err != null) {
-                std.debug.print(
-                    "failed to execute statement: {any}\n",
-                    .{c.libsql_error_message(executed.err).*},
-                );
-                return errors.ExecuteError.ExecuteStatementError;
-            }
-        }
-        return executed.rows_changed;
-    }
-
-    ///
-    /// Processes the schema string and returns the queries and schema information at compile time.
-    ///
-    /// # Arguments
-    ///
-    /// * `schema`: The schema string to be processed.
-    /// * `delimiter`: The delimiter to be used for splitting the schema string.
-    /// * `trim_whitespace`: Whether to trim whitespace from the schema string.
-    ///
-    /// # Returns
-    ///
-    /// * `struct { queries: []const []const u8, schema_info: schemas.Schema }`:
-    ///   The queries and schema information.
-    ///
-    fn _process_schema(
-        comptime schema: []const u8,
-        comptime delimiter: []const u8,
-        comptime trim_whitespace: bool,
-    ) struct {
-        queries: []const []const u8,
-        schema_info: schemas.Schema,
-    } {
-        comptime {
-            var queries: []const []const u8 = &.{};
-            var tables: []const schemas.TableInfo = &.{};
-            var iter = std.mem.splitSequence(u8, schema, delimiter);
-            while (iter.next()) |item| {
-                if (item.len == 0) continue;
-                const stmt = if (trim_whitespace)
-                    std.mem.trim(u8, item, &std.ascii.whitespace)
-                else
-                    item;
-                if (stmt.len == 0) continue;
-                queries = queries ++ [_][]const u8{stmt};
-                if (schemas.parseCreateTable(stmt)) |table_info| {
-                    tables = tables ++ [_]schemas.TableInfo{table_info};
-                }
-            }
-            return .{
-                .queries = queries,
-                .schema_info = schemas.Schema{ .tables = tables },
-            };
-        }
+        return _statement_execute(&stmt);
     }
 
     ///
@@ -506,5 +442,65 @@ test "encoder type mismatch handling" {
         return error.ExpectedError;
     } else |err| {
         try std.testing.expectEqual(err, error.TypeMismatch);
+    }
+}
+
+fn _statement_execute(statement: *const c.libsql_statement_t) !u64 {
+    const executed = c.libsql_statement_execute(statement.*);
+    {
+        errdefer c.libsql_error_deinit(executed.err);
+        if (executed.err != null) {
+            std.debug.print(
+                "failed to execute statement: {any}\n",
+                .{c.libsql_error_message(executed.err).*},
+            );
+            return errors.ExecuteError.ExecuteStatementError;
+        }
+    }
+    return executed.rows_changed;
+}
+
+///
+/// Processes the schema string and returns the queries and schema information at compile time.
+///
+/// # Arguments
+///
+/// * `schema`: The schema string to be processed.
+/// * `delimiter`: The delimiter to be used for splitting the schema string.
+/// * `trim_whitespace`: Whether to trim whitespace from the schema string.
+///
+/// # Returns
+///
+/// * `struct { queries: []const []const u8, schema_info: schemas.Schema }`:
+///   The queries and schema information.
+///
+fn _process_schema(
+    comptime schema: []const u8,
+    comptime delimiter: []const u8,
+    comptime trim_whitespace: bool,
+) struct {
+    queries: []const []const u8,
+    schema_info: schemas.Schema,
+} {
+    comptime {
+        var queries: []const []const u8 = &.{};
+        var tables: []const schemas.TableInfo = &.{};
+        var iter = std.mem.splitSequence(u8, schema, delimiter);
+        while (iter.next()) |item| {
+            if (item.len == 0) continue;
+            const stmt = if (trim_whitespace)
+                std.mem.trim(u8, item, &std.ascii.whitespace)
+            else
+                item;
+            if (stmt.len == 0) continue;
+            queries = queries ++ [_][]const u8{stmt};
+            if (schemas.parseCreateTable(stmt)) |table_info| {
+                tables = tables ++ [_]schemas.TableInfo{table_info};
+            }
+        }
+        return .{
+            .queries = queries,
+            .schema_info = schemas.Schema{ .tables = tables },
+        };
     }
 }
