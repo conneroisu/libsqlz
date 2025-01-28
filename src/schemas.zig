@@ -1,4 +1,5 @@
 const std = @import("std");
+const errors = @import("errors.zig");
 
 ///
 /// Schema is a collection of tables created at comptime.
@@ -27,7 +28,7 @@ pub const Schema = struct {
                 return table;
             }
         }
-        return error.TableNotFound;
+        return errors.SchemaError.TableNotFound;
     }
 
     pub fn _getColumn(
@@ -44,7 +45,7 @@ pub const Schema = struct {
             }
         }
 
-        return error.ColumnNotFound;
+        return errors.SchemaError.ColumnNotFound;
     }
 
     pub fn _present_schema(self: Self) !void {
@@ -52,6 +53,24 @@ pub const Schema = struct {
             std.debug.print("table: '{s}'\n", .{table.name});
             for (table.columns) |column| {
                 std.debug.print("    column: '{s}' : '{s}'\n", .{ column.name, @tagName(column.type) });
+            }
+        }
+    }
+
+    /// Validates a SELECT query at comptime
+    pub fn validateSelect(comptime self: Schema, comptime query: []const u8) !void {
+        const table_name = try parseTableNameFromSelect(query);
+        _ = try self._getTable(table_name);
+        // Additional validation could be added here for column names
+    }
+
+    /// Validates a CREATE TABLE statement at comptime
+    pub fn validateCreate(comptime self: Schema, comptime query: []const u8) !void {
+        const table_info = parseCreateTable(query) orelse return errors.SchemaError.InvalidCreateStatement;
+        // Check if table already exists
+        for (self.tables) |existing| {
+            if (std.mem.eql(u8, existing.name, table_info.name)) {
+                return errors.SchemaError.TableAlreadyExists;
             }
         }
     }
@@ -177,7 +196,7 @@ pub fn parseTableNameFromSelect(query: []const u8) ![]const u8 {
     }
 
     std.log.debug("Table name: '{s} not found in select statement\n", .{query});
-    return error.TableColumnNotFound;
+    return errors.QueryError.TableColumnNotFound;
 }
 
 test "parse table name from select" {
@@ -187,4 +206,26 @@ test "parse table name from select" {
     try testing.expectEqualStrings(try parseTableNameFromSelect("SELECT id, name FROM   customers WHERE id > 5"), "customers");
     try testing.expectEqualStrings(try parseTableNameFromSelect("SELECT * FROM schema.table;"), "schema.table");
     try testing.expectEqualStrings(try parseTableNameFromSelect("SELECT * from USERS where id = 1"), "USERS");
+    // Test error cases
+    try testing.expectError(errors.QueryError.TableColumnNotFound, parseTableNameFromSelect("SELECT * FROM"));
+    try testing.expectError(errors.QueryError.TableColumnNotFound, parseTableNameFromSelect("SELECT * WHERE id = 1"));
+    try testing.expectError(errors.QueryError.TableColumnNotFound, parseTableNameFromSelect("FROM"));
+    try testing.expectError(errors.QueryError.TableColumnNotFound, parseTableNameFromSelect("SELECT * FORM users"));
+    try testing.expectError(errors.QueryError.TableColumnNotFound, parseTableNameFromSelect(""));
+}
+
+// Add this at the end of the file
+test "compile time query validation" {
+    comptime {
+        var schema = Schema{ .tables = &[_]TableInfo{.{
+            .name = "users",
+            .columns = &[_]ColumnInfo{
+                .{ .name = "id", .type = .int },
+                .{ .name = "name", .type = .text },
+            },
+        }} };
+
+        try schema.validateSelect("SELECT * FROM users");
+        try schema.validateCreate("CREATE TABLE posts (id INTEGER, title TEXT)");
+    }
 }
