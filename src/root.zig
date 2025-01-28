@@ -291,6 +291,20 @@ pub const Database = struct {
         return executed.rows_changed;
     }
 
+    ///
+    /// Processes the schema string and returns the queries and schema information at compile time.
+    ///
+    /// # Arguments
+    ///
+    /// * `schema`: The schema string to be processed.
+    /// * `delimiter`: The delimiter to be used for splitting the schema string.
+    /// * `trim_whitespace`: Whether to trim whitespace from the schema string.
+    ///
+    /// # Returns
+    ///
+    /// * `struct { queries: []const []const u8, schema_info: schemas.Schema }`:
+    ///   The queries and schema information.
+    ///
     fn _process_schema(
         comptime schema: []const u8,
         comptime delimiter: []const u8,
@@ -322,7 +336,18 @@ pub const Database = struct {
         }
     }
 
-    // Modified _select method for the Database struct
+    ///
+    /// Selects data from the database.
+    ///
+    /// # Arguments
+    ///
+    /// * `T`: The type of the data to be selected.
+    /// * `stmt`: The SQL statement to be executed.
+    ///
+    /// # Returns
+    ///
+    /// * `[]T`: The data selected from the database.
+    ///
     pub fn _select(self: Self, comptime T: type, stmt: []const u8) ![]T {
         const c_query = c.libsql_connection_prepare(self.conn, stmt.ptr);
         defer c.libsql_statement_deinit(c_query);
