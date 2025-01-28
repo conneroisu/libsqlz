@@ -350,12 +350,22 @@ test "local init with schema and encoding" {
     defer std.testing.allocator.free(results);
 
     // Verify results
-    try std.testing.expectEqual(results.len, 101); // 1000 bulk inserts + 1 initial insert
+    try std.testing.expectEqual(results.len, 101); // 100 bulk inserts + 1 initial insert
     try std.testing.expectEqualStrings(results[0].name, "test1");
 
     // Check some random entries
-    try std.testing.expectEqualStrings(results[1].name, "test0");
-    try std.testing.expectEqualStrings(results[100].name, "test99");
+    try std.testing.expectEqualStrings(
+        "test0",
+        results[1].name,
+    );
+    try std.testing.expectEqualStrings(
+        "test99",
+        results[100].name,
+    );
+    try std.testing.expectEqual(
+        101,
+        results[100].id,
+    );
 
     // Verify IDs are sequential
     for (results, 0..) |row, i| {
