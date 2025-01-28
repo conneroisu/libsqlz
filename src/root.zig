@@ -4,6 +4,7 @@ const cToString = @import("utilities.zig").cToString;
 const SQLEncoder = @import("sql.zig").SQLEncoder;
 const errors = @import("errors.zig");
 const assert = std.debug.assert;
+const expect = std.testing.expect;
 
 const c = @cImport({
     @cInclude("libsql.h");
@@ -369,8 +370,8 @@ test "sync without auth" {
         "",
     )) |_| {
         return error.ShouldBeAuthError;
-    } else |_| {
-        // TODO: check error type
+    } else |err| {
+        try expect(err == errors.SetupError.AuthKeyIsNull);
     }
 }
 
