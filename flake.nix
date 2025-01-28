@@ -86,13 +86,7 @@
             packages =
               (with pkgs; [
                 tcl
-                gnum4
-
                 watchexec
-                stdenv.cc
-
-                tbb # Intel Threading Building Blocks
-                llvmPackages.openmp # OpenMP support
                 binutils
               ])
               ++ (with pkgs; [
@@ -103,20 +97,15 @@
                 pkgs.xorg.libX11
                 pkgs.gdb
               ]
-              ++ pkgs.lib.optionals isDarwin ((
-                  with pkgs; [
-                    darwin.apple_sdk.frameworks.CoreFoundation
-                    darwin.apple_sdk.frameworks.Security
-                    darwin.apple_sdk.frameworks.SystemConfiguration
-                    rosettaPkgs.gdb
-                  ]
-                )
-                ++ (
-                  with pkgs; [
-                    darwin.apple_sdk.frameworks.Foundation
-                    darwin.apple_sdk.frameworks.IOKit
-                  ]
-                ));
+              ++ pkgs.lib.optionals isDarwin [
+                rosettaPkgs.gdb
+              ]
+              ++ (
+                with pkgs; [
+                  darwin.apple_sdk.frameworks.Foundation
+                  darwin.apple_sdk.frameworks.IOKit
+                ]
+              );
 
             enterShell = ''
 
