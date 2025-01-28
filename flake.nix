@@ -143,7 +143,7 @@
 
               tests.exec = ''
                 rm -rf ./.zig-cache/
-                zig build test
+                zig build test --summary all
               '';
             };
 
