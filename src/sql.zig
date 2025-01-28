@@ -172,20 +172,6 @@ pub fn SQLEncoder(comptime T: type) type {
     };
 }
 
-///
-/// Schema is a collection of tables created at comptime.
-///
-/// It can be used to ensure validity of queries at comptime.
-///
-/// Usage:
-/// ```zig
-/// const schema = Schema.init(allocator);
-/// defer schema.deinit();
-///
-/// try schema.load("CREATE TABLE users (id INTEGER, name TEXT);");
-/// try schema.load("CREATE TABLE customers (id INTEGER, name TEXT);");
-/// ```
-///
 pub const Schema = struct {
     const Self = @This();
     tables: []const TableInfo,

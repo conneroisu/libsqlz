@@ -189,7 +189,7 @@ pub const Database = struct {
         return _statement_execute(&stmt);
     }
 
-    pub fn _select(self: Self, comptime T: type, stmt: []const u8) ![]T {
+    pub fn _select(self: Self, comptime T: type, comptime stmt: []const u8) ![]T {
         const c_query = c.libsql_connection_prepare(self.conn, stmt.ptr);
         defer c.libsql_statement_deinit(c_query);
 
