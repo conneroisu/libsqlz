@@ -2,6 +2,7 @@ const std = @import("std");
 const schemas = @import("schemas.zig");
 const cToString = @import("utilities.zig").cToString;
 const SQLEncoder = @import("sql.zig").SQLEncoder;
+const errors = @import("errors.zig");
 const assert = std.debug.assert;
 
 const c = @cImport({
@@ -152,7 +153,7 @@ pub const Database = struct {
             URLSchemas,
             parsed_uri.scheme,
         ) orelse {
-            return error.SchemeNotFound;
+            return errors.SetupError.SchemeNotFound;
         };
         var db_conf: c.libsql_database_desc_t = undefined;
         var setup_conf: c.libsql_config_t = undefined;
@@ -167,7 +168,7 @@ pub const Database = struct {
         }
         const setup = c.libsql_setup(setup_conf);
         if (setup != null) {
-            return error.SetupError;
+            return errors.SetupError.SetupConfigError;
         }
 
         switch (type_url) {
@@ -178,7 +179,7 @@ pub const Database = struct {
             },
             .libsql => {
                 if (cfg.auth_key == null or cfg.auth_key.?.len == 0) {
-                    return error.AuthKeyIsNull;
+                    return errors.SetupError.AuthKeyIsNull;
                 }
                 db_conf = c.libsql_database_desc_t{
                     .url = url_with_null.ptr,
@@ -191,7 +192,7 @@ pub const Database = struct {
                 }
             },
             .@"file libsql" => {
-                return error.SchemeNotFound;
+                return errors.SetupError.SchemeNotFound;
             },
         }
 
@@ -203,7 +204,7 @@ pub const Database = struct {
                     "failed to initialize libsql database: {any}\n",
                     .{c.libsql_error_message(db.err).*},
                 );
-                return error.InitError;
+                return errors.SetupError.InitError;
             }
         }
 
@@ -215,7 +216,7 @@ pub const Database = struct {
                     "failed to connect to libsql database: {any}\n",
                     .{c.libsql_error_message(conn.err).*},
                 );
-                return error.ConnectError;
+                return errors.SetupError.ConnectingError;
             }
         }
 
@@ -242,7 +243,7 @@ pub const Database = struct {
                 "failed to prepare statement: {any}\n",
                 .{c.libsql_error_message(c_stmt.err).*},
             );
-            return error.PrepareError;
+            return errors.ExecuteError.PrepareError;
         }
 
         const executed = c.libsql_statement_execute(c_stmt);
@@ -251,7 +252,7 @@ pub const Database = struct {
                 "failed to execute statement: {any}\n",
                 .{c.libsql_error_message(executed.err).*},
             );
-            return error.ExecuteStatementError;
+            return errors.ExecuteError.ExecuteStatementError;
         }
         return executed.rows_changed;
     }
@@ -272,7 +273,7 @@ pub const Database = struct {
                     "failed to prepare statement: {any} `{s}`\n",
                     .{ c.libsql_error_message(stmt.err).*, c_query },
                 );
-                return error.PrepareError;
+                return errors.ExecuteError.PrepareError;
             }
         }
         const executed = c.libsql_statement_execute(stmt);
@@ -283,7 +284,7 @@ pub const Database = struct {
                     "failed to execute statement: {any}\n",
                     .{c.libsql_error_message(executed.err).*},
                 );
-                return error.ExecuteStatementError;
+                return errors.ExecuteError.ExecuteStatementError;
             }
         }
         return executed.rows_changed;
