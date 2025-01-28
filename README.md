@@ -55,3 +55,27 @@ pub fn build(b: *std.Build) void {
 ```
 
 ### usage
+
+
+### contributing
+
+Contributions are welcome!
+
+Everything needed to build and debug libsqlz is invluded in the provided `flake.nix` `devShell`.
+
+To activate the devShell, run:
+```sh
+direnv allow 
+# or
+nix develop
+```
+
+To build libsqlz, run:
+```sh
+zig build
+```
+
+To run the unit tests, run:
+```sh
+zig build test
+```

@@ -78,9 +78,9 @@
                 enable = true;
                 package = pkgs.zig;
               };
+              rust.enable = true;
               nix.enable = true;
               c.enable = true;
-              rust.enable = true;
             };
 
             packages =
