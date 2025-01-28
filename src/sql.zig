@@ -172,38 +172,44 @@ pub fn SQLEncoder(comptime T: type) type {
     };
 }
 
+pub fn _getTable(
+    schema: *const Schema,
+    name: []const u8,
+) !TableInfo {
+    for (schema.tables) |table| {
+        if (std.mem.eql(u8, table.name, name)) {
+            return table;
+        }
+    }
+    return errors.SchemaError.TableNotFound;
+}
+
+pub fn _getColumn(
+    self: *const Schema,
+    table_name: []const u8,
+    column_name: []const u8,
+) !ColumnInfo {
+    const table = try self._getTable(table_name);
+
+    for (table.columns, 0..) |column, i| {
+        if (std.mem.eql(u8, column.name, column_name)) {
+            std.debug.print("found column '{s}'\n", .{column.name});
+            return table.columns[i];
+        }
+    }
+
+    return errors.SchemaError.ColumnNotFound;
+}
+
+/// Validates a SELECT query at comptime
+pub fn validateSelect(comptime schema: Schema, comptime query: []const u8) !void {
+    const table_name = comptime try parseTableNameFromSelect(query);
+    _ = comptime try _getTable(&schema, table_name);
+    // Additional validation could be added here for column names
+}
 pub const Schema = struct {
     const Self = @This();
     tables: []const TableInfo,
-
-    pub fn _getTable(
-        self: *const Schema,
-        name: []const u8,
-    ) !TableInfo {
-        for (self.tables) |table| {
-            if (std.mem.eql(u8, table.name, name)) {
-                return table;
-            }
-        }
-        return errors.SchemaError.TableNotFound;
-    }
-
-    pub fn _getColumn(
-        self: *const Schema,
-        table_name: []const u8,
-        column_name: []const u8,
-    ) !ColumnInfo {
-        const table = try self._getTable(table_name);
-
-        for (table.columns, 0..) |column, i| {
-            if (std.mem.eql(u8, column.name, column_name)) {
-                std.debug.print("found column '{s}'\n", .{column.name});
-                return table.columns[i];
-            }
-        }
-
-        return errors.SchemaError.ColumnNotFound;
-    }
 
     pub fn _present_schema(self: Self) !void {
         for (self.tables) |table| {
@@ -212,13 +218,6 @@ pub const Schema = struct {
                 std.debug.print("    column: '{s}' : '{s}'\n", .{ column.name, @tagName(column.type) });
             }
         }
-    }
-
-    /// Validates a SELECT query at comptime
-    pub fn validateSelect(comptime self: Schema, comptime query: []const u8) !void {
-        const table_name = try parseTableNameFromSelect(query);
-        _ = try self._getTable(table_name);
-        // Additional validation could be added here for column names
     }
 
     /// Validates a CREATE TABLE statement at comptime
@@ -382,7 +381,7 @@ test "compile time query validation" {
             },
         }} };
 
-        try schema.validateSelect("SELECT * FROM users");
+        try validateSelect(schema, "SELECT * FROM users");
         try schema.validateCreate("CREATE TABLE posts (id INTEGER, title TEXT)");
     }
 }

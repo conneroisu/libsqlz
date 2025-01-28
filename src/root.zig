@@ -189,7 +189,18 @@ pub const Database = struct {
         return _statement_execute(&stmt);
     }
 
-    pub fn _select(self: Self, comptime T: type, comptime stmt: []const u8) ![]T {
+    pub fn _select(
+        self: Self,
+        comptime T: type,
+        comptime stmt: []const u8,
+        comptime schema: sql.Schema,
+    ) ![]T {
+        sql.validateSelect(schema, stmt) catch |err| {
+            comptime {
+                const args = .{ err, stmt };
+                @compileError(std.fmt.comptimePrint("failed to validate select statement: {s}\n statement: {s}", args));
+            }
+        };
         const c_query = c.libsql_connection_prepare(self.conn, stmt.ptr);
         defer c.libsql_statement_deinit(c_query);
 
@@ -334,8 +345,12 @@ test "local init with schema and encoding" {
         assert(rows11 == 1);
     }
 
-    // Test the new encoder functionality
-    const results = try db._select(TestRow, "SELECT * FROM test");
+    const processed = comptime _process_schema(
+        schema,
+        ";",
+        true,
+    );
+    const results = try db._select(TestRow, "SELECT * FROM test", processed.schema_info);
     defer std.testing.allocator.free(results);
 
     // Verify results
@@ -401,7 +416,12 @@ test "encoder handles null values" {
         .{},
     );
 
-    const results = try db._select(NullableRow, "SELECT * FROM nullable_test");
+    const processed = comptime _process_schema(
+        schema,
+        ";",
+        true,
+    );
+    const results = try db._select(NullableRow, "SELECT * FROM nullable_test", processed.schema_info);
     defer std.testing.allocator.free(results);
 
     try std.testing.expectEqual(results.len, 2);
@@ -445,8 +465,13 @@ test "encoder type mismatch handling" {
         .{},
     );
 
+    const processed = comptime _process_schema(
+        schema,
+        ";",
+        true,
+    );
     // This should return an error due to type mismatch
-    if (db._select(InvalidRow, "SELECT * FROM type_test")) |_| {
+    if (db._select(InvalidRow, "SELECT * FROM type_test", processed.schema_info)) |_| {
         return error.ExpectedError;
     } else |err| {
         try std.testing.expectEqual(err, error.TypeMismatch);
