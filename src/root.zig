@@ -5,6 +5,7 @@ const sql = @import("sql.zig");
 const errors = @import("errors.zig");
 const assert = std.debug.assert;
 const expect = std.testing.expect;
+const compalloc = @import("compalloc.zig");
 
 const c = @cImport({
     @cInclude("libsql.h");
@@ -38,6 +39,35 @@ pub const Config = struct {
     logging: bool = false,
     logger: ?*const fn (log_t: c.libsql_log_t) callconv(.C) void = null,
 };
+
+pub fn Database(
+    comptime schema: []const u8,
+) type {
+    const processed = comptime _process_schema(
+        schema,
+        ";",
+        true,
+    );
+    return struct {
+        const Self = @This();
+        base: Db,
+
+        pub fn init(base_inst: Db) !Self {
+            return Self{
+                .base = base_inst,
+            };
+        }
+
+        pub fn select(self: Self, comptime T: type, comptime format: []const u8) ![]T {
+            // This should return an error due to type mismatch
+            return self.base._select(T, format, processed.schema_info);
+        }
+
+        pub fn deinit(self: Self) !void {
+            try self.base.deinit();
+        }
+    };
+}
 
 pub const Db = struct {
     const Self = @This();
@@ -478,34 +508,5 @@ test "encoder type mismatch handling" {
     defer dbb.deinit() catch unreachable;
     _ = dbb.select(InvalidRow, "SELECT * FROM type_test") catch |err| {
         try std.testing.expectEqual(err, error.TypeMismatch);
-    };
-}
-
-pub fn Database(
-    comptime schema: []const u8,
-) type {
-    const processed = comptime _process_schema(
-        schema,
-        ";",
-        true,
-    );
-    return struct {
-        const Self = @This();
-        base: Db,
-
-        pub fn init(base_inst: Db) !Self {
-            return Self{
-                .base = base_inst,
-            };
-        }
-
-        pub fn select(self: Self, comptime T: type, comptime format: []const u8) ![]T {
-            // This should return an error due to type mismatch
-            return self.base._select(T, format, processed.schema_info);
-        }
-
-        pub fn deinit(self: Self) !void {
-            try self.base.deinit();
-        }
     };
 }

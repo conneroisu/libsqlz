@@ -47,6 +47,23 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run unit tests");
 
     test_step.dependOn(&run_lib_unit_tests.step);
+
+    const compalloc_unit_tests = b.addTest(.{
+        .root_source_file = b.path("src/compalloc.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    lib_unit_tests.addIncludePath(b.path(path_libsql));
+    lib_unit_tests.addLibraryPath(b.path(lib_dir));
+    lib_unit_tests.linkSystemLibrary("libsql");
+    lib_unit_tests.linkLibC();
+
+    const run_compalloc_unit_tests = b.addRunArtifact(compalloc_unit_tests);
+
+    const compalloc_test_step = b.step("lexer-test", "Run lexer unit tests");
+
+    compalloc_test_step.dependOn(&run_compalloc_unit_tests.step);
 }
 
 fn get_target_triple(target: std.Build.ResolvedTarget) []const u8 {
