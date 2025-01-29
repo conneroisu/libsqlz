@@ -3,3 +3,4 @@ zig-out/
 .devenv*
 devenv.local.nix
 .direnv
+.vscode
