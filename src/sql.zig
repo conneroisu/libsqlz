@@ -207,6 +207,7 @@ pub fn validateSelect(comptime schema: Schema, comptime query: []const u8) !void
     _ = comptime try _getTable(&schema, table_name);
     // Additional validation could be added here for column names
 }
+
 pub const Schema = struct {
     const Self = @This();
     tables: []const TableInfo,
