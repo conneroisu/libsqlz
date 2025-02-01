@@ -148,30 +148,37 @@ pub fn Libsql(
                 stmt,
             ) catch |err| {
                 const args = .{ err, stmt };
-                @compileError(std.fmt.comptimePrint("failed to validate many statement: {s}\n statement: {s}", args));
+                @compileError(std.fmt.comptimePrint("failed to validate many statement: {any}\n statement: {s}", args));
             };
 
             const c_query = c.libsql_connection_prepare(self.connection, stmt.ptr);
             defer c.libsql_statement_deinit(c_query);
-            if (c_query.err != null) {
-                std.debug.print(
-                    "failed to prepare statement: {any}\n",
-                    .{c.libsql_error_message(c_query.err).*},
-                );
-                return error.PrepareSelectError;
+            {
+                errdefer c.libsql_error_deinit(c_query.err);
+                if (c_query.err != null) {
+                    std.debug.print(
+                        "failed to prepare statement: {any}\n",
+                        .{c.libsql_error_message(c_query.err).*},
+                    );
+                    return error.PrepareSelectError;
+                }
             }
 
             const executed = c.libsql_statement_query(c_query);
-            if (executed.err != null) {
-                std.debug.print(
-                    "failed to execute statement: {any}\n",
-                    .{c.libsql_error_message(executed.err).*},
-                );
-                return error.ExecuteSelectError;
-            }
+            defer c.libsql_rows_deinit(executed);
+            {
+                errdefer c.libsql_error_deinit(executed.err);
+                if (executed.err != null) {
+                    std.debug.print(
+                        "failed to execute statement: {any}\n",
+                        .{c.libsql_error_message(executed.err).*},
+                    );
+                    return error.ExecuteSelectError;
+                }
 
-            if (executed.inner == null) {
-                return error.SelectNullResult;
+                if (executed.inner == null) {
+                    return error.SelectNullResult;
+                }
             }
 
             return try sql.SQLEncoder(T).decode(executed, self.alloc);
@@ -255,6 +262,12 @@ test "libsqlz 10,000 inserts" {
         \\    age INTEGER NOT NULL
         \\);
     ;
+
+    const userType = struct {
+        id: u64,
+        name: []const u8,
+        age: u64,
+    };
     const database = try Libsql(Config{
         .schema = schema,
     }).init(
@@ -271,4 +284,7 @@ test "libsqlz 10,000 inserts" {
         const j = try database.exec("INSERT INTO users (name, age) VALUES ('John{d}', {d})", .{ i, i });
         assert(j == 1);
     }
+
+    const users = try database.many(userType, "SELECT * FROM users");
+    database.alloc.free(users);
 }

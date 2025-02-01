@@ -17,28 +17,16 @@ pub fn Validator(
     comptime trim_whitespace: bool,
 ) type {
     assert(schema.len > 0); // schema cannot be empty
-    const allocator = compalloc.allocator;
+    const sqlSchema = comptime _process_schema(
+        schema,
+        schema_delimiter,
+        trim_whitespace,
+    );
     return struct {
         const Self = @This();
-        db: libsqlz.Libsql,
+        schema: sql.Schema,
 
         pub fn init() !Self {
-            const inter = libsqlz.Libsql(
-                libsqlz.Config{
-                    .schema = schema,
-                    .logging = false,
-                    .schema_delimiter = schema_delimiter,
-                    .trim_whitespace = trim_whitespace,
-                },
-            );
-
-            // const schema = comptime _process_schema(
-            //     cfg.schema,
-            //     cfg.schema_delimiter,
-            //     cfg.trim_whitespace,
-            // );
-
-            try inter.init(allocator, "file:///dummy", ":memory:");
             return Self{};
         }
 
@@ -49,10 +37,8 @@ pub fn Validator(
             switch (method) {
                 .many => {
                     comptime {
-                        if (stmt.len == 0) {
-                            const table_name = try parseTableNameFromSelect(stmt);
-                            _ = try _getTable(&schema, table_name);
-                        }
+                        const table_name = try parseTableNameFromSelect(stmt);
+                        _ = try _getTable(&sqlSchema, table_name);
                     }
                 },
                 .one => {
@@ -74,7 +60,7 @@ pub fn Validator(
     };
 }
 
-pub fn parseTableNameFromSelect(query: []const u8) ![]const u8 {
+pub fn parseTableNameFromSelect(comptime query: []const u8) ![]const u8 {
     const from_pattern = "FROM";
 
     // Find the FROM keyword

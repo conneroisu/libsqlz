@@ -167,7 +167,7 @@ pub fn SQLEncoder(comptime T: type) type {
             }
 
             // Return all decoded rows
-            return items.toOwnedSlice();
+            return try items.toOwnedSlice();
         }
     };
 }
