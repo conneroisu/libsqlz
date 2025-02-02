@@ -286,5 +286,6 @@ test "libsqlz 10,000 inserts" {
     }
 
     const users = try database.many(userType, "SELECT * FROM users");
+    assert(users.len == 10000);
     database.alloc.free(users);
 }
