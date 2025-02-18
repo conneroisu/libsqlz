@@ -88,6 +88,7 @@
                 tcl
                 watchexec
                 binutils
+                antlr4
               ])
               ++ (with pkgs; [
                 alejandra
