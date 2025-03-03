@@ -10,6 +10,7 @@ const c = @cImport({
 
 const Schemes = enum { file, libsql, @"file libsql" };
 
+// Config is the configuration struct for the Libsql database.
 pub const Config = struct {
     const Self = @This();
 
