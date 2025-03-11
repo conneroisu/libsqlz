@@ -10,6 +10,7 @@ const c = @cImport({
 
 const Schemes = enum { file, libsql, @"file libsql" };
 
+// Config is the configuration struct for the Libsql database.
 pub const Config = struct {
     const Self = @This();
 
@@ -124,6 +125,13 @@ pub fn Libsql(
                     return errors.ExecuteError.PrepareError;
                 }
             }
+
+            // TODO: bind values
+            // c.libsql_statement_bind_value(
+            //     stmt,
+            //     c.libsql_value_t{ .type = c.LIBSQL_TYPE_BLOB},
+            // );
+
             const executed = c.libsql_statement_execute(stmt);
             {
                 errdefer c.libsql_error_deinit(executed.err);
