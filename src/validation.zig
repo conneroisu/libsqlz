@@ -64,7 +64,7 @@ pub fn parseTableNameFromSelect(comptime query: []const u8) ![]const u8 {
     const from_pattern = "FROM";
 
     // Find the FROM keyword
-    var words = std.mem.split(u8, query, " ");
+    var words = std.mem.splitSequence(u8, query, " ");
     var found_from = false;
     var next_word: ?[]const u8 = null;
 

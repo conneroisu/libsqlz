@@ -262,7 +262,7 @@ pub fn parseCreateTable(comptime query: []const u8) ?TableInfo {
     }
 
     // Extract table name and column definitions
-    var parts = std.mem.split(u8, query[create_pattern.len..], "(");
+    var parts = std.mem.splitSequence(u8, query[create_pattern.len..], "(");
 
     // const name_part = parts.first();
     // we need to get the last full non-spaced word before the first (
@@ -281,12 +281,12 @@ pub fn parseCreateTable(comptime query: []const u8) ?TableInfo {
     var columns: []const ColumnInfo = &[_]ColumnInfo{};
 
     if (parts.next()) |col_defs| {
-        var col_iter = std.mem.split(u8, col_defs, ",");
+        var col_iter = std.mem.splitSequence(u8, col_defs, ",");
         while (col_iter.next()) |col| {
             const trimmed_col = std.mem.trim(u8, col, &std.ascii.whitespace);
             if (trimmed_col.len == 0) continue;
 
-            var col_parts = std.mem.split(u8, trimmed_col, " ");
+            var col_parts = std.mem.splitSequence(u8, trimmed_col, " ");
             const col_name = col_parts.first();
 
             const type_str = if (col_parts.next()) |t|
@@ -322,7 +322,7 @@ pub fn parseTableNameFromSelect(query: []const u8) ![]const u8 {
     const from_pattern = "FROM";
 
     // Find the FROM keyword
-    var words = std.mem.split(u8, query, " ");
+    var words = std.mem.splitSequence(u8, query, " ");
     var found_from = false;
     var next_word: ?[]const u8 = null;
 

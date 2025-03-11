@@ -1,156 +1,132 @@
 {
+  description = "Optimized primitives for collective multi-GPU communication in Zig";
+
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    systems.url = "github:nix-systems/default";
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
+
     flake-utils.url = "github:numtide/flake-utils";
     flake-utils.inputs.systems.follows = "systems";
 
-    devenv = {
-      url = "github:cachix/devenv";
-      inputs.nixpkgs.follows = "nixpkgs";
+    systems.url = "github:nix-systems/default";
+
+    zig = {
+      url = "github:mitchellh/zig-overlay";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
+      };
+    };
+    zls-overlay.url = "github:zigtools/zls";
+
+    zig2nix = {
+      url = "github:jcollie/zig2nix?ref=c311d8e77a6ee0d995f40a6e10a89a3a4ab04f9a";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
+      };
     };
   };
 
   nixConfig = {
-    extra-substituters = "https://cache.nixos.org https://nix-community.cachix.org https://devenv.cachix.org";
-    extra-trusted-public-keys = "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= sylvorg.cachix.org-1:xd1jb7cDkzX+D+Wqt6TemzkJH9u9esXEFu1yaR9p8H8= devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=";
+    extra-substituters = ''
+      https://cache.nixos.org
+      https://nix-community.cachix.org
+      https://devenv.cachix.org
+    '';
+    extra-trusted-public-keys = ''
+      cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+      nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=
+      devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
+    '';
     extra-experimental-features = "nix-command flakes";
   };
 
-  outputs = {
-    self,
-    nixpkgs,
-    devenv,
-    flake-utils,
-    ...
-  } @ inputs:
-    flake-utils.lib.eachDefaultSystem (system: let
-      inherit (pkgs.stdenv) isLinux isDarwin isAarch64;
-      pkgs = import nixpkgs {
-        inherit system;
-        overlays = [];
-        config.allowUnfree = true;
-      };
-      rosettaPkgs =
-        if isDarwin && isAarch64
-        then pkgs.pkgsx86_64Darwin
-        else pkgs;
+  outputs = inputs @ {flake-utils, ...}:
+    flake-utils.lib.eachSystem [
+      "x86_64-linux"
+      "i686-linux"
+      "x86_64-darwin"
+      "aarch64-linux"
+      "aarch64-darwin"
+    ] (system: let
+      #
+      zigpkgs = inputs.zig.packages.${system};
+      overlays = [
+        (final: prev: {
+          inherit zigpkgs;
+        })
+      ];
+      zig = zigpkgs.master;
+      zls = inputs.zls-overlay.packages.x86_64-linux.zls.overrideAttrs (old: {
+        nativeBuildInputs = [zig];
+      });
+      #
+      pkgs = import inputs.nixpkgs {inherit system overlays;};
+      #
+      script = pkgs.writeShellScriptBin;
     in {
       packages = {
-        devenv-up = self.devShells.${system}.default.config.procfileScript;
-        devenv-test = self.devShells.${system}.default.config.test;
+        doc = pkgs.stdenv.mkDerivation {
+          pname = "nccl-zig-docs";
+          version = "0.1";
+          src = ./.;
+          nativeBuildInputs = with pkgs; [
+            nixdoc
+            mdbook
+            mdbook-open-on-gh
+            mdbook-cmdrun
+            git
+          ];
+          dontConfigure = true;
+          dontFixup = true;
+          env.RUST_BACKTRACE = 1;
+          buildPhase = ''
+            runHook preBuild
+            cd doc
+            mkdir -p .git
+            mdbook build
+            runHook postBuild
+          '';
+          installPhase = ''
+            runHook preInstall
+            mv book $out
+            runHook postInstall
+          '';
+        };
       };
 
-      devShells.default = devenv.lib.mkShell {
-        inherit inputs pkgs;
-        modules = [
-          {
-            #
-            devcontainer = {
-              enable = true;
-              settings.customizations.vscode.extensions = [
-                "github.copilot"
-                "github.codespaces"
-                "ms-python.vscode-pylance"
-                "redhat.vscode-yaml"
-                "redhat.vscode-xml"
-                "visualstudioexptteam.vscodeintellicode"
-                "bradlc.vscode-tailwindcss"
-                "christian-kohler.path-intellisense"
-                "supermaven.supermaven"
-                "jnoortheen.nix-ide"
-                "mkhl.direnv"
-                "tamasfe.even-better-toml"
-                "eamodio.gitlens"
-                "streetsidesoftware.code-spell-checker"
-                "editorconfig.editorconfig"
-              ];
-            };
+      devShells.default = pkgs.mkShell {
+        shellHook = ''
+          export REPO_ROOT=$(git rev-parse --show-toplevel)
+        '';
+        packages = with pkgs; [
+          alejandra
+          nixd
+          zig
+          zls
 
-            git-hooks = {
-              hooks = {
-                alejandra.enable = true;
-              };
-            };
+          (script "dx" ''
+            $EDITOR $REPO_ROOT/flake.nix
+          '')
+          (script "build" ''
+            nix build .#packages.x86_64-linux.conneroh
+          '')
+          (script "generate-all" ''
+            go generate $REPO_ROOT/...
+          '')
+          (script "format" ''
+            export REPO_ROOT=$(git rev-parse --show-toplevel) # needed
 
-            languages = {
-              zig = {
-                enable = true;
-                package = pkgs.zig;
-              };
-              rust.enable = true;
-              nix.enable = true;
-              c.enable = true;
-            };
-
-            packages =
-              (with pkgs; [
-                tcl
-                watchexec
-                binutils
-                antlr4
-              ])
-              ++ (with pkgs; [
-                alejandra
-                libclang
-              ])
-              ++ pkgs.lib.optionals isLinux [
-                pkgs.xorg.libX11
-                pkgs.gdb
-              ]
-              ++ pkgs.lib.optionals isDarwin [
-                rosettaPkgs.gdb
-              ]
-              ++ (
-                with pkgs; [
-                  darwin.apple_sdk.frameworks.Foundation
-                  darwin.apple_sdk.frameworks.IOKit
-                ]
-              );
-
-            enterShell = ''
-
-              export REPO_ROOT=$(git rev-parse --show-toplevel)
-              export LD_LIBRARY_PATH=${
-                pkgs.lib.makeLibraryPath (
-                  (with pkgs; [
-                    pkgs.mesa
-                    stdenv.cc
-                  ])
-                  ++ (
-                    pkgs.lib.optionals isLinux [
-                      pkgs.xorg.libX11
-                    ]
-                  )
-                  ++ (
-                    pkgs.lib.optionals isDarwin [
-                    ]
-                  )
-                )
-              }:$LD_LIBRARY_PATH
-
-            '';
-
-            scripts = {
-              dx.exec = ''
-                $EDITOR $REPO_ROOT/flake.nix
-              '';
-
-              build-libsqlc.exec = ''
-                cd ./vendor/libsql-c
-                sh build.sh
-                # TODO: auto copy build outputs
-              '';
-
-              tests.exec = ''
-                rm -rf ./.zig-cache/
-                zig build test --summary all
-              '';
-            };
-
-            cachix.enable = true;
-          }
+            git ls-files \
+              --others \
+              --exclude-standard \
+              --cached \
+              -- '*.js' '*.ts' '*.css' '*.md' '*.json' \
+              | xargs prettier --write
+          '')
         ];
       };
     });
