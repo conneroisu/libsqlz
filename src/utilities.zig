@@ -22,6 +22,6 @@ pub fn sliceToString(slice: c.libsql_slice_t) ![]const u8 {
 }
 
 pub fn cToString(ptr: [*c]const u8) ?[]const u8 {
-    if (ptr == null) return "";
+    if (ptr == null) return null;
     return ptr[0..std.mem.len(ptr)];
 }

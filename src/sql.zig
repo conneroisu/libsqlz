@@ -101,12 +101,18 @@ pub fn SQLEncoder(comptime T: type) type {
                                     u64 => @field(item, field_info.name) = @intCast(val.ok.value.integer),
                                     i32 => @field(item, field_info.name) = @intCast(val.ok.value.integer),
                                     u32 => @field(item, field_info.name) = @intCast(val.ok.value.integer),
+                                    
+                                    // Boolean handling - SQLite stores booleans as integers (0 = false, 1 = true)
+                                    bool => @field(item, field_info.name) = val.ok.value.integer != 0,
 
                                     // Optional integers
                                     ?i64 => @field(item, field_info.name) = val.ok.value.integer,
                                     ?u64 => @field(item, field_info.name) = @intCast(val.ok.value.integer),
                                     ?i32 => @field(item, field_info.name) = @intCast(val.ok.value.integer),
                                     ?u32 => @field(item, field_info.name) = @intCast(val.ok.value.integer),
+                                    
+                                    // Optional boolean
+                                    ?bool => @field(item, field_info.name) = val.ok.value.integer != 0,
 
                                     else => return error.TypeMismatch,
                                 }
@@ -142,6 +148,7 @@ pub fn SQLEncoder(comptime T: type) type {
                                     ?f32 => @field(item, field_info.name) = null,
                                     ?i32 => @field(item, field_info.name) = null,
                                     ?u32 => @field(item, field_info.name) = null,
+                                    ?bool => @field(item, field_info.name) = null,
                                     else => return error.TypeMismatch,
                                 }
                             },
@@ -252,6 +259,8 @@ pub const TableInfo = struct {
 
 // Helper function to parse CREATE TABLE statements at comptime
 pub fn parseCreateTable(comptime query: []const u8) ?TableInfo {
+    @setEvalBranchQuota(100000); // Increase branch quota for complex comptime evaluation
+    
     const create_pattern = comptime "CREATE TABLE";
     if (!std.mem.startsWith(u8, std.mem.trim(
         u8,
