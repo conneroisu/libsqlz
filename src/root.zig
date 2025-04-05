@@ -99,6 +99,7 @@ pub fn Libsql(
                 .connection = try _connect(&db),
                 .database = db,
             };
+            // Execute schema without parameters
             _ = try self.exec(cfg.schema, .{});
 
             return self;
@@ -109,10 +110,14 @@ pub fn Libsql(
             c.libsql_database_deinit(self.database);
         }
 
-        pub fn exec(self: Self, comptime fmt: []const u8, args: anytype) !u64 {
-            const c_query = try std.fmt.allocPrintZ(self.alloc, fmt, args);
+        /// Execute a SQL query with parameterized values using ? placeholders
+        /// Example: database.exec("INSERT INTO users VALUES (?, ?)", .{ "John", 25 })
+        /// This is safe from SQL injection as values are properly bound using libsql binding
+        pub fn exec(self: Self, comptime query: []const u8, args: anytype) !u64 {
+            const c_query = try self.alloc.dupeZ(u8, query);
             defer self.alloc.free(c_query);
 
+            // Prepare the statement
             const stmt = c.libsql_connection_prepare(self.connection, c_query.ptr);
             defer c.libsql_statement_deinit(stmt);
             {
@@ -126,12 +131,13 @@ pub fn Libsql(
                 }
             }
 
-            // TODO: bind values
-            // c.libsql_statement_bind_value(
-            //     stmt,
-            //     c.libsql_value_t{ .type = c.LIBSQL_TYPE_BLOB},
-            // );
+            // Bind parameters
+            const param_count = comptime args.len;
+            inline for (0..param_count) |i| {
+                try self.bindValue(stmt, i + 1, args[i]);
+            }
 
+            // Execute the statement
             const executed = c.libsql_statement_execute(stmt);
             {
                 errdefer c.libsql_error_deinit(executed.err);
@@ -144,6 +150,88 @@ pub fn Libsql(
                 }
             }
             return executed.rows_changed;
+        }
+
+        fn bindValue(self: Self, stmt: c.libsql_statement_t, index: usize, value: anytype) !void {
+            const T = @TypeOf(value);
+            var bind_value: c.libsql_value_t = undefined;
+            
+            // Note: Using if statements for type checking since type info field names vary across Zig versions
+            if (comptime isInteger(T)) {
+                bind_value = c.libsql_integer(@intCast(value));
+            } else if (comptime isFloat(T)) {
+                bind_value = c.libsql_real(value);
+            } else if (comptime isString(T)) {
+                const type_name = @typeName(T);
+                
+                // Try to handle all types of strings
+                if (std.mem.startsWith(u8, type_name, "[]")) {
+                    // Slices
+                    bind_value = c.libsql_text(@ptrCast(value.ptr), value.len);
+                } else {
+                    // String literals and others - get length by finding null terminator
+                    var len: usize = 0;
+                    while (value[len] != 0) : (len += 1) {}
+                    bind_value = c.libsql_text(@ptrCast(value), len);
+                }
+            } else if (comptime isOptional(T)) {
+                if (value) |val| {
+                    return self.bindValue(stmt, index, val);
+                } else {
+                    bind_value = c.libsql_null();
+                }
+            } else if (comptime isNull(T)) {
+                bind_value = c.libsql_null();
+            } else {
+                @compileError("Unsupported type for SQL binding: " ++ @typeName(T));
+            }
+            
+            const bind_result = c.libsql_statement_bind_value(stmt, bind_value);
+            if (bind_result.err != null) {
+                std.debug.print(
+                    "failed to bind value at index {d}: {any}\n",
+                    .{ index, c.libsql_error_message(bind_result.err).* },
+                );
+                return errors.ExecuteError.BindError;
+            }
+        }
+        
+        // Type checking helper functions
+        fn isInteger(comptime T: type) bool {
+            const type_name = @typeName(T);
+            if (type_name.len == 0) return false;
+            
+            // Check if type name starts with u or i (uint, int) or is a comptime_int
+            return type_name[0] == 'u' or type_name[0] == 'i' or std.mem.eql(u8, type_name, "comptime_int");
+        }
+        
+        fn isFloat(comptime T: type) bool {
+            const type_name = @typeName(T);
+            if (type_name.len == 0) return false;
+            
+            // Check if type name starts with f (float) or is a comptime_float
+            return type_name[0] == 'f' or std.mem.eql(u8, type_name, "comptime_float");
+        }
+        
+        fn isString(comptime T: type) bool {
+            const type_name = @typeName(T);
+            // Check for []u8, []const u8, or string literals like *const [N:0]u8
+            return std.mem.startsWith(u8, type_name, "[]u8") or 
+                   std.mem.startsWith(u8, type_name, "[]const u8") or
+                   (std.mem.indexOfScalar(u8, type_name, '[') != null and 
+                    std.mem.indexOfScalar(u8, type_name, ']') != null and
+                    std.mem.indexOfScalar(u8, type_name, 'u') != null and
+                    std.mem.indexOfScalar(u8, type_name, '8') != null);
+        }
+        
+        fn isOptional(comptime T: type) bool {
+            const type_name = @typeName(T);
+            return std.mem.startsWith(u8, type_name, "?");
+        }
+        
+        fn isNull(comptime T: type) bool {
+            const type_name = @typeName(T);
+            return std.mem.eql(u8, type_name, "null");
         }
 
         pub fn many(
@@ -259,7 +347,7 @@ test "libsqlz" {
         @panic("failed to deinit database");
     };
 
-    _ = try database.exec("INSERT INTO users (name, age) VALUES ('John', 20)", .{});
+    _ = try database.exec("INSERT INTO users (name, age) VALUES (?, ?)", .{ "John", 20 });
 }
 
 test "libsqlz 10,000 inserts" {
@@ -289,7 +377,9 @@ test "libsqlz 10,000 inserts" {
     };
     var i: u64 = 0;
     while (i < 10000) : (i += 1) {
-        const j = try database.exec("INSERT INTO users (name, age) VALUES ('John{d}', {d})", .{ i, i });
+        const name = try std.fmt.allocPrint(testing.allocator, "John{d}", .{i});
+        defer testing.allocator.free(name);
+        const j = try database.exec("INSERT INTO users (name, age) VALUES (?, ?)", .{ name, i });
         assert(j == 1);
     }
 

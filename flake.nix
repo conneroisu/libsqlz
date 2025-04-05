@@ -1,5 +1,5 @@
 {
-  description = "Optimized primitives for collective multi-GPU communication in Zig";
+  description = "Libsql for Zig";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -20,14 +20,6 @@
       };
     };
     zls-overlay.url = "github:zigtools/zls";
-
-    zig2nix = {
-      url = "github:jcollie/zig2nix?ref=c311d8e77a6ee0d995f40a6e10a89a3a4ab04f9a";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-utils.follows = "flake-utils";
-      };
-    };
   };
 
   nixConfig = {
@@ -70,7 +62,7 @@
     in {
       packages = {
         doc = pkgs.stdenv.mkDerivation {
-          pname = "nccl-zig-docs";
+          pname = "libsqlz-zig-docs";
           version = "0.1";
           src = ./.;
           nativeBuildInputs = with pkgs; [

@@ -11,6 +11,7 @@ pub const SetupError = error{
 pub const ExecuteError = error{
     PrepareError,
     ExecuteStatementError,
+    BindError,
 };
 
 /// Schema-related errors
