@@ -20,14 +20,6 @@
       };
     };
     zls-overlay.url = "github:zigtools/zls";
-
-    zig2nix = {
-      url = "github:jcollie/zig2nix?ref=c311d8e77a6ee0d995f40a6e10a89a3a4ab04f9a";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-utils.follows = "flake-utils";
-      };
-    };
   };
 
   nixConfig = {
