@@ -1,73 +1,90 @@
-# Install
+# Installation
 
-## Install using Go (recommended)
+LibSQLZ is designed to be included in your Zig project. You can install it using various methods.
 
-```bash
-go install github.com/conneroisu/gohard
-```
-
-## Install from source
+## Using Zig Package Manager
 
 ```bash
-git clone https://github.com/conneroisu/gohard.git
-cd gohard
-go build
+zig fetch --save https://github.com/conneroisu/libsqlz/archive/main.tar.gz
 ```
 
-## Install from binary
+Then add to your `build.zig`:
 
-Download the latest binary from the [releases page](https://github.com/conneroisu/gohard/releases).
+```zig
+const libsqlz_dep = b.dependency("libsqlz", .{
+    .target = target,
+    .optimize = optimize,
+});
+pkg.addModule("libsqlz", libsqlz_dep.module("libsqlz"));
+```
+
+## Manual Installation
+
+1. Clone the repository into your project or a dependencies directory:
+
+```bash
+git clone https://github.com/conneroisu/libsqlz.git
+```
+
+2. Add as a dependency in your `build.zig`:
+
+```zig
+const libsqlz = b.addModule("libsqlz", .{
+    .root_source_file = b.path("path/to/libsqlz/src/root.zig"),
+});
+
+exe.addModule("libsqlz", libsqlz);
+```
+
+## Prerequisites
+
+LibSQLZ requires the libSQL C library to be available on your system. The library bundles precompiled versions for common platforms in the `external` directory. If your platform isn't supported, you'll need to build libSQL from source.
 
 ## Nix/NixOS
 
-Flake:
+If you're using Nix, you can use the provided flake:
 
 ```nix
 {
-    inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
-    flake-utils.inputs.systems.follows = "systems";
-    inputs.gohard.url = "github:conneroisu/gohard";
-    inputs.gohard.inputs.nixpkgs.follows = "nixpkgs";
+    inputs = {
+        nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+        libsqlz.url = "github:conneroisu/libsqlz";
+    };
 
-
-    outputs = { self, gohard, nixpkgs, flake-utils, ... }:
-    {
-    flake-utils.lib.eachSystem [
-      "x86_64-linux"
-      "i686-linux"
-      "x86_64-darwin"
-      "aarch64-linux"
-      "aarch64-darwin"
-    ] (system: let
-        pkgs = import nixpkgs { inherit system; };
-    in
-        {
-            # OR for a shell
-            devShells.default = pkgs.mkShell {
-                buildInputs = with pkgs; [
-                    inputs.gohard.packages."${system}".gohard
-                ];
-            };
-        });
+    outputs = { self, nixpkgs, libsqlz, ... }: {
+        # Use in your development environment
+        devShells.x86_64-linux.default = nixpkgs.legacyPackages.x86_64-linux.mkShell {
+            buildInputs = [ libsqlz.packages.x86_64-linux.default ];
+        };
+    };
 }
 ```
 
-## Install from Homebrew
+## Verifying Installation
 
-```bash
-brew tap conneroisu/gohard
-brew install gohard
-```
+To verify that LibSQLZ is correctly installed and working in your project, you can create a simple test:
 
-## Install from Snap
+```zig
+const std = @import("std");
+const libsqlz = @import("libsqlz");
 
-```bash
-snap install gohard
-```
+test "libsqlz basic test" {
+    // Simple schema for testing
+    const schema = \\
+        CREATE TABLE IF NOT EXISTS test (id INTEGER PRIMARY KEY, value TEXT);
+    ;
 
-## Install from Docker
+    const db = try libsqlz.Libsql(.{
+        .schema = schema,
+    }).init(
+        std.testing.allocator,
+        "file:///dummy",
+        ":memory:",
+        null,
+    );
+    defer db.deinit() catch unreachable;
 
-```bash
-docker pull conneroisu/gohard
+    // If it gets here without errors, installation is working
+    _ = try db.exec("INSERT INTO test (value) VALUES (?)", .{"test value"});
+}
 ```
