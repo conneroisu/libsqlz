@@ -1,5 +1,5 @@
 {
-  description = "Optimized primitives for collective multi-GPU communication in Zig";
+  description = "Libsql for Zig";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -70,7 +70,7 @@
     in {
       packages = {
         doc = pkgs.stdenv.mkDerivation {
-          pname = "nccl-zig-docs";
+          pname = "libsqlz-zig-docs";
           version = "0.1";
           src = ./.;
           nativeBuildInputs = with pkgs; [
