@@ -52,7 +52,7 @@
         })
       ];
       zig = zigpkgs.master;
-      zls = inputs.zls-overlay.packages.x86_64-linux.zls.overrideAttrs (old: {
+      zls = inputs.zls-overlay.packages."${system}".zls.overrideAttrs (old: {
         nativeBuildInputs = [zig];
       });
       #
